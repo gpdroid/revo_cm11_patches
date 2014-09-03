@@ -1,0 +1,343 @@
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index a29d868..d94d4cf 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -1994,6 +1994,14 @@
+             <meta-data android:name="com.android.settings.TOP_LEVEL_HEADER_ID"
+                 android:resource="@id/display_settings" />
+         </activity>
++        <activity android:name=".deviceinfo.Update"
++                android:label="@string/system_update_settings_list_item_title">
++            <intent-filter>
++               <action android:name="android.intent.action.MAIN" />
++               <category android:name="android.intent.category.DEFAULT" />
++               <category android:name="android.intent.category.VOICE_LAUNCH" />
++            </intent-filter>
++        </activity>
+ 
+         <activity android:name="Settings$UserSettingsActivity"
+                 android:uiOptions="splitActionBarWhenNarrow"
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index d100d9e..b9a3730 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -4981,4 +4981,9 @@
+     <string name="saturation_str">Saturation: <xliff:g id="saturation_value">%1$s</xliff:g></string>
+     <string name="contrast_str">Contrast: <xliff:g id="contrast_value">%1$s</xliff:g></string>
+     <string name="intensity_str">Intensity: <xliff:g id="intensity_str_value">%1$s</xliff:g></string>
++    <!-- System Updates Menu -->
++    <string name="update_from_storage">Install zip from internal SD</string> 
++    <string name="update_from_ota">Update from OTA</string>
++    <string name="install_gapps">Install Google Apps(tm)</string>
++    <string name="install_other_os">Install another OS</string>
+ </resources>
+diff --git a/res/xml/device_info_settings.xml b/res/xml/device_info_settings.xml
+index 22c29de..6befb3c 100644
+--- a/res/xml/device_info_settings.xml
++++ b/res/xml/device_info_settings.xml
+@@ -21,9 +21,9 @@
+         <PreferenceScreen android:key="system_update_settings"
+                 android:title="@string/system_update_settings_list_item_title" 
+                 android:summary="@string/system_update_settings_list_item_summary">
+-            <intent android:action="android.settings.SYSTEM_UPDATE_SETTINGS"
+-                    android:targetPackage="com.cyngn.fota"
+-                    android:targetClass="com.cyngn.fota.SystemUpdateActivity" />
++            <intent android:action = "android.intent.action.MAIN"
++                    android:targetPackage = "com.android.settings"
++                    android:targetClass = "com.android.settings.deviceinfo.Update" />
+         </PreferenceScreen>
+ 
+         <PreferenceScreen android:key="additional_system_update_settings"
+@@ -42,14 +42,14 @@
+                     android:targetClass="com.android.settings.deviceinfo.Status" />
+         </PreferenceScreen>
+ 
+-        <!-- CyanogenMod Updates -->
++        <!-- CyanogenMod Updates 
+         <PreferenceScreen android:key="cm_updates"
+                 android:title="@string/cmupdate_settings_title" 
+                 android:summary="@string/cmupdate_settings_summary">
+             <intent android:action="android.intent.action.MAIN"
+                     android:targetPackage="com.cyanogenmod.updater"
+                     android:targetClass="com.cyanogenmod.updater.UpdatesSettings" />
+-        </PreferenceScreen>
++        </PreferenceScreen -->
+ 
+         <!-- Change Log -->
+         <PreferenceScreen android:key="changelog"
+diff --git a/res/xml/system_update.xml b/res/xml/system_update.xml
+new file mode 100644
+index 0000000..ef7a193
+--- /dev/null
++++ b/res/xml/system_update.xml
+@@ -0,0 +1,48 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2008 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++  
++          http://www.apache.org/licenses/LICENSE-2.0
++  
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
++                  android:title="@string/system_update_settings_list_item_title">
++
++        <PreferenceScreen android:key="system_update_from_ota"
++                          android:title="@string/update_from_ota"
++                          android:icon="@drawable/ic_tab_updates">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.OTA" />
++        </PreferenceScreen>
++        <PreferenceScreen android:key="system_install_gapps"
++                          android:title="@string/install_gapps"
++                          android:icon="@drawable/ic_settings_applications">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.Gapps" />
++        </PreferenceScreen>
++        <PreferenceScreen android:key="system_install_os"
++                          android:title="@string/install_other_os"
++                          android:icon="@drawable/ic_settings_dock">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.OS" />
++        </PreferenceScreen>
++        <PreferenceScreen android:key="system_update_from_storage"
++                          android:title="@string/update_from_storage"
++                          android:icon="@drawable/ic_tab_selected_sdcard">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.Storage" />
++        </PreferenceScreen>
++</PreferenceScreen>
+diff --git a/src/com/android/settings/DeviceInfoSettings.java b/src/com/android/settings/DeviceInfoSettings.java
+index b1a27fb..11ffdb3 100644
+--- a/src/com/android/settings/DeviceInfoSettings.java
++++ b/src/com/android/settings/DeviceInfoSettings.java
+@@ -127,15 +127,28 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+         removePreferenceIfPropertyMissing(getPreferenceScreen(), KEY_SELINUX_STATUS,
+                 PROPERTY_SELINUX_STATUS);
+ 
+-        String cpuInfo = getCPUInfo();
+-        String memInfo = getMemInfo();
++String cpuInfo = null;
++		try{
++			cpuInfo = getCPUInfo();
++		}catch (IOException ie){
++			//error getting cpuInfo
++			 Log.e(LOG_TAG, "Error getting cpuInfo IOException on method getCPUInfo()");
++		}
++        String memInfo = null;
++
++		try{
++			memInfo = getMemInfo();
++		}catch (IOException ie){
++			//error getting memInfo
++			Log.e(LOG_TAG, "Error getting memInfo IOException on method getMemInfo()");
++		}
+ 
+         // Only the owner should see the Updater settings, if it exists
+-        if (UserHandle.myUserId() == UserHandle.USER_OWNER) {
+-            removePreferenceIfPackageNotInstalled(findPreference(KEY_CM_UPDATES));
+-        } else {
+-            getPreferenceScreen().removePreference(findPreference(KEY_CM_UPDATES));
+-        }
++        //if (UserHandle.myUserId() == UserHandle.USER_OWNER) {
++        //    removePreferenceIfPackageNotInstalled(findPreference(KEY_CM_UPDATES));
++        //} else {
++        //    getPreferenceScreen().removePreference(findPreference(KEY_CM_UPDATES));
++        //}
+ 
+         if (cpuInfo != null) {
+             setStringSummary(KEY_DEVICE_CPU, cpuInfo);
+@@ -181,12 +194,13 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+         // These are contained by the root preference screen
+         parentPreference = getPreferenceScreen();
+         if (UserHandle.myUserId() == UserHandle.USER_OWNER) {
+-            Utils.updatePreferenceToSpecificActivityOrRemove(act, parentPreference,
+-                    KEY_SYSTEM_UPDATE_SETTINGS,
+-                    Utils.UPDATE_PREFERENCE_FLAG_SET_TITLE_TO_MATCHING_ACTIVITY);
+-            /* Make sure the activity is provided by who we want... */
+-            if (findPreference(KEY_SYSTEM_UPDATE_SETTINGS) != null)
+-                removePreferenceIfPackageNotInstalled(findPreference(KEY_SYSTEM_UPDATE_SETTINGS));
++            if(Utils.checkApkExist(act,"com.gp.updater")){
++                Utils.updatePreferenceToSpecificActivityOrRemove(act, parentPreference,
++                        KEY_SYSTEM_UPDATE_SETTINGS,
++                        Utils.UPDATE_PREFERENCE_FLAG_SET_TITLE_TO_MATCHING_ACTIVITY);
++            }else{
++                removePreference(KEY_SYSTEM_UPDATE_SETTINGS);
++            }
+         } else {
+             // Remove for secondary users
+             removePreference(KEY_SYSTEM_UPDATE_SETTINGS);
+@@ -402,42 +416,43 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+         return "";
+     }
+ 
+-    private String getMemInfo() {
++    private String getMemInfo() throws IOException {
+         String result = null;
+         BufferedReader reader = null;
+ 
+-        try {
+-            /* /proc/meminfo entries follow this format:
+-             * MemTotal:         362096 kB
+-             * MemFree:           29144 kB
+-             * Buffers:            5236 kB
+-             * Cached:            81652 kB
+-             */
+-            String firstLine = readLine(FILENAME_PROC_MEMINFO);
+-            if (firstLine != null) {
+-                String parts[] = firstLine.split("\\s+");
+-                if (parts.length == 3) {
+-                    result = Long.parseLong(parts[1])/1024 + " MB";
+-                }
++        /* /proc/meminfo entries follow this format:
++         * MemTotal:         362096 kB
++         * MemFree:           29144 kB
++         * Buffers:            5236 kB
++         * Cached:            81652 kB
++         */
++        String firstLine = readLine(FILENAME_PROC_MEMINFO);
++        if (firstLine != null) {
++            String parts[] = firstLine.split("\\s+");
++            if (parts.length == 3) {
++                result = Long.parseLong(parts[1])/1024 + " MB";
+             }
+-        } catch (IOException e) {}
++		}
+ 
+         return result;
+     }
+ 
+-    private String getCPUInfo() {
++    private String getCPUInfo() throws IOException {
+         String result = null;
++		BufferedReader reader = new BufferedReader(new FileReader(FILENAME_PROC_CPUINFO), 256);
+ 
+         try {
+-            /* The expected /proc/cpuinfo output is as follows:
+-             * Processor	: ARMv7 Processor rev 2 (v7l)
+-             * BogoMIPS	: 272.62
+-             */
+-            String firstLine = readLine(FILENAME_PROC_CPUINFO);
+-            if (firstLine != null) {
+-                result = firstLine.split(":")[1].trim();
+-            }
+-        } catch (IOException e) {}
++            String cpuInfo = null;
++			boolean found = false;
++			while ((cpuInfo = reader.readLine()) != null && !found) {
++				if (cpuInfo.split(":")[0].trim().equals("model name")) {
++					result = cpuInfo.split(":")[1].trim();
++					found = true;
++				}
++			}
++        } finally {
++            reader.close();
++        }
+ 
+         return result;
+     }
+diff --git a/src/com/android/settings/Utils.java b/src/com/android/settings/Utils.java
+index 09b14c0..558c538 100644
+--- a/src/com/android/settings/Utils.java
++++ b/src/com/android/settings/Utils.java
+@@ -795,4 +795,17 @@ public class Utils {
+ 
+         return null;
+     }
++
++    public static boolean checkApkExist(Context context, String packageName) {
++        if (packageName == null || "".equals(packageName))
++                return false;
++        try {
++                ApplicationInfo info = context.getPackageManager()
++                                .getApplicationInfo(packageName,
++                                 PackageManager.GET_UNINSTALLED_PACKAGES);
++                return true;
++        } catch (NameNotFoundException e) {
++                return false;
++        }
++    }    
+ }
+diff --git a/src/com/android/settings/deviceinfo/Update.java b/src/com/android/settings/deviceinfo/Update.java
+new file mode 100644
+index 0000000..07c74bf
+--- /dev/null
++++ b/src/com/android/settings/deviceinfo/Update.java
+@@ -0,0 +1,64 @@
++/*
++ * Copyright (C) 2008 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings.deviceinfo;
++
++import java.io.File;
++import android.net.Uri;
++import android.content.DialogInterface;
++import android.app.AlertDialog;
++import android.content.DialogInterface.OnClickListener;
++import android.content.BroadcastReceiver;
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
++import android.content.res.Resources;
++import android.os.Bundle;
++import android.os.Handler;
++import android.preference.Preference;
++import android.preference.PreferenceActivity;
++import android.preference.PreferenceScreen;
++import android.text.TextUtils;
++import android.view.Window;
++import android.graphics.PixelFormat;
++import android.util.Log;
++import android.os.Environment;
++import com.android.settings.R;
++
++import java.lang.ref.WeakReference;
++
++/**
++ * System updates 
++ * # update from usb storage
++ * # update form OTA
++ */
++public class Update extends PreferenceActivity {
++    private static final String TAG = "Update";
++    
++    @Override
++    protected void onCreate(Bundle icicle) {
++        super.onCreate(icicle);
++
++        addPreferencesFromResource(R.xml.system_update);
++       getWindow().setFormat(PixelFormat.TRANSLUCENT);
++    }
++
++    @Override
++    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
++        return super.onPreferenceTreeClick(preferenceScreen, preference);
++    }
++
++}
+

@@ -1,0 +1,85 @@
+diff --git a/libc/Android.mk b/libc/Android.mk
+index 1b02b78..6c17a32 100644
+--- a/libc/Android.mk
++++ b/libc/Android.mk
+@@ -370,6 +370,7 @@ libc_common_src_files += \
+ 	string/strncpy.c \
+ 	bionic/strchr.cpp \
+ 	string/strrchr.c \
++	bionic/memchr.c \
+ 	bionic/memrchr.c \
+ 	string/index.c \
+ 	bionic/strnlen.c \
+@@ -409,10 +410,7 @@ libc_common_src_files += \
+ libc_static_common_src_files += \
+     bionic/pthread.c \
+     bionic/pthread_create.cpp \
+-    bionic/pthread_key.cpp \
+-
+-libc_common_src_files += \
+-    bionic/memchr.c
++    bionic/pthread_key.cpp
+ endif # x86
+ 
+ ifeq ($(TARGET_ARCH),mips)
+@@ -519,8 +517,10 @@ ifeq ($(TARGET_ARCH),arm)
+ endif # !arm
+ 
+ ifeq ($(TARGET_ARCH),x86)
+-  libc_common_cflags += -DSOFTFLOAT
+-  libc_crt_target_cflags :=
++  libc_common_cflags += -DSOFTFLOAT \
++                        -fno-pic \
++                        -fno-pie
++  libc_crt_target_cflags := -m32
+   ifeq ($(ARCH_X86_HAVE_SSE2),true)
+       libc_crt_target_cflags += -DUSE_SSE2=1
+   endif
+diff --git a/libc/arch-arm/generic/bionic/strlen.c b/libc/arch-arm/generic/bionic/strlen.c
+index 811e1e0..824cf78 100644
+--- a/libc/arch-arm/generic/bionic/strlen.c
++++ b/libc/arch-arm/generic/bionic/strlen.c
+@@ -63,7 +63,9 @@ size_t strlen(const char *s)
+         "ldr     %[v], [%[s]], #4           \n"
+         "sub     %[l], %[l], %[s]           \n"
+         "0:                                 \n"
++#if __ARM_HAVE_PLD
+         "pld     [%[s], #64]                \n"
++#endif
+         "sub     %[t], %[v], %[mask], lsr #7\n"
+         "and     %[t], %[t], %[mask]        \n"
+         "bics    %[t], %[t], %[v]           \n"
+diff --git a/libc/arch-arm/generic/generic.mk b/libc/arch-arm/generic/generic.mk
+index b3ed69d..ab723c1 100644
+--- a/libc/arch-arm/generic/generic.mk
++++ b/libc/arch-arm/generic/generic.mk
+@@ -2,10 +2,14 @@ $(call libc-add-cpu-variant-src,MEMCPY,arch-arm/generic/bionic/memcpy.S)
+ $(call libc-add-cpu-variant-src,MEMSET,arch-arm/generic/bionic/memset.S)
+ $(call libc-add-cpu-variant-src,STRCAT,string/strcat.c)
+ $(call libc-add-cpu-variant-src,STRCMP,arch-arm/generic/bionic/strcmp.S)
++ifeq ($(TARGET_ARCH),arm)
+ $(call libc-add-cpu-variant-src,MEMMOVE,bionic/memmove.c.arm)
+ $(call libc-add-cpu-variant-src,BCOPY,string/bcopy.c.arm)
++endif
+ $(call libc-add-cpu-variant-src,STRCPY,arch-arm/generic/bionic/strcpy.S)
+ $(call libc-add-cpu-variant-src,STRLEN,arch-arm/generic/bionic/strlen.c)
+ $(call libc-add-cpu-variant-src,__STRCAT_CHK,bionic/__strcat_chk.cpp)
+ $(call libc-add-cpu-variant-src,__STRCPY_CHK,bionic/__strcpy_chk.cpp)
++ifeq ($(TARGET_ARCH),arm)
+ $(call libc-add-cpu-variant-src,MEMCHR,bionic/memchr.c)
++endif
+diff --git a/libc/arch-x86/string/ssse3-memcpy-atom.S b/libc/arch-x86/string/ssse3-memcpy-atom.S
+index 1080a38..5013886 100644
+--- a/libc/arch-x86/string/ssse3-memcpy-atom.S
++++ b/libc/arch-x86/string/ssse3-memcpy-atom.S
+@@ -31,6 +31,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #include "cache.h"
+ #undef __i686
+ 
++#ifndef USE_AS_MEMMOVE
++# define USE_AS_MEMMOVE 1
++#endif
++
+ #ifndef MEMCPY
+ # define MEMCPY	memcpy
+ #endif

@@ -1,0 +1,22 @@
+diff --git a/wpa_supplicant/p2p_supplicant.c b/wpa_supplicant/p2p_supplicant.c
+index 9a4e42f..9614b04 100644
+--- a/wpa_supplicant/p2p_supplicant.c
++++ b/wpa_supplicant/p2p_supplicant.c
+@@ -3319,9 +3319,15 @@ int wpas_p2p_init(struct wpa_global *global, struct wpa_supplicant *wpa_s)
+ 	if (wpa_s->conf->p2p_disabled)
+ 		return 0;
+ 
+-	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_P2P_CAPABLE))
+-		return 0;
++	// before
++	//	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_P2P_CAPABLE))
++	//		return 0;
+ 
++	// after
++	if (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_P2P_CAPABLE)) {
++		//return 0;
++		wpa_printf(MSG_ERROR, "wpas_p2p_init() SKIP!! p2p capability check");
++	}
+ 	if (global->p2p)
+ 		return 0;
+ 

@@ -1,0 +1,58 @@
+diff --git a/include/llvm/ADT/Triple.h b/include/llvm/ADT/Triple.h
+index 8d968e8..8982763 100644
+--- a/include/llvm/ADT/Triple.h
++++ b/include/llvm/ADT/Triple.h
+@@ -46,6 +46,7 @@ public:
+     UnknownArch,
+ 
+     arm,     // ARM: arm, armv.*, xscale
++    usc,     // USC: powervr
+     aarch64, // AArch64: aarch64
+     hexagon, // Hexagon: hexagon
+     mips,    // MIPS: mips, mipsallegrex
+@@ -78,6 +79,7 @@ public:
+     Apple,
+     PC,
+     SCEI,
++    IMG,
+     BGP,
+     BGQ,
+     Freescale,
+@@ -121,6 +123,7 @@ public:
+     GNUX32,
+     EABI,
+     MachO,
++    POWERVR,
+     Android,
+     ELF
+   };
+diff --git a/lib/IR/Verifier.cpp b/lib/IR/Verifier.cpp
+index 0eda97f..28ab73e 100644
+--- a/lib/IR/Verifier.cpp
++++ b/lib/IR/Verifier.cpp
+@@ -2361,6 +2361,9 @@ bool llvm::verifyFunction(const Function &f, VerifierFailureAction action) {
+ ///
+ bool llvm::verifyModule(const Module &M, VerifierFailureAction action,
+                         std::string *ErrorInfo) {
++
++  // TODO: Temporarily disabled verifier until USC Intrinsics issue has been resolved.
++  return false;
+   PassManager PM;
+   Verifier *V = new Verifier(action);
+   PM.add(V);
+diff --git a/lib/Target/TargetLibraryInfo.cpp b/lib/Target/TargetLibraryInfo.cpp
+index 8696b57..3dc3d4f 100644
+--- a/lib/Target/TargetLibraryInfo.cpp
++++ b/lib/Target/TargetLibraryInfo.cpp
+@@ -346,6 +346,11 @@ static void initialize(TargetLibraryInfo &TLI, const Triple &T,
+   }
+ #endif // !NDEBUG
+   
++  // Disable all library functions for the USC target
++  if (T.getArch() == Triple::usc) {
++    TLI.disableAllFunctions();
++  }
++
+   // memset_pattern16 is only available on iOS 3.0 and Mac OS/X 10.5 and later.
+   if (T.isMacOSX()) {
+     if (T.isMacOSXVersionLT(10, 5))

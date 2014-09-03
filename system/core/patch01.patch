@@ -1,0 +1,419 @@
+diff --git a/adb/adb.c b/adb/adb.c
+index 9c398a7..41270f9 100644
+--- a/adb/adb.c
++++ b/adb/adb.c
+@@ -1331,14 +1331,16 @@ int adb_main(int is_daemon, int server_port)
+         ** AID_LOG to read system logs (adb logcat)
+         ** AID_INPUT to diagnose input issues (getevent)
+         ** AID_INET to diagnose network issues (netcfg, ping)
++        ** AID_GRAPHICS to access the frame buffer
+         ** AID_NET_BT and AID_NET_BT_ADMIN to diagnose bluetooth (hcidump)
+         ** AID_SDCARD_R to allow reading from the SD card
+         ** AID_SDCARD_RW to allow writing to the SD card
++        ** AID_MOUNT to allow unmounting the SD card before rebooting
+         ** AID_NET_BW_STATS to read out qtaguid statistics
+         */
+-        gid_t groups[] = { AID_ADB, AID_LOG, AID_INPUT, AID_INET,
++        gid_t groups[] = { AID_ADB, AID_LOG, AID_INPUT, AID_INET, AID_GRAPHICS,
+                            AID_NET_BT, AID_NET_BT_ADMIN, AID_SDCARD_R, AID_SDCARD_RW,
+-                           AID_NET_BW_STATS };
++                           AID_MOUNT, AID_NET_BW_STATS };
+         if (setgroups(sizeof(groups)/sizeof(groups[0]), groups) != 0) {
+             exit(1);
+         }
+diff --git a/healthd/healthd.cpp b/healthd/healthd.cpp
+index 0c6bb01..5e24df8 100644
+--- a/healthd/healthd.cpp
++++ b/healthd/healthd.cpp
+@@ -81,6 +81,8 @@ static int wakealarm_wake_interval = DEFAULT_PERIODIC_CHORES_INTERVAL_FAST;
+ static BatteryMonitor* gBatteryMonitor;
+ 
+ static bool nosvcmgr;
++static bool nopolling;
++static bool nowakeup;
+ 
+ static void wakealarm_set_interval(int interval) {
+     struct itimerspec itval;
+@@ -212,7 +214,9 @@ static void healthd_mainloop(void) {
+     }
+ 
+     if (uevent_fd >= 0) {
+-        ev.events = EPOLLIN | EPOLLWAKEUP;
++        ev.events = EPOLLIN;
++        if (!nowakeup)
++            ev.events |= EPOLLWAKEUP;
+         ev.data.ptr = (void *)uevent_event;
+         if (epoll_ctl(epollfd, EPOLL_CTL_ADD, uevent_fd, &ev) == -1)
+             KLOG_ERROR(LOG_TAG,
+@@ -223,7 +227,9 @@ static void healthd_mainloop(void) {
+     }
+ 
+     if (wakealarm_fd >= 0) {
+-        ev.events = EPOLLIN | EPOLLWAKEUP;
++        ev.events = EPOLLIN;
++        if (!nowakeup)
++            ev.events |= EPOLLWAKEUP;
+         ev.data.ptr = (void *)wakealarm_event;
+         if (epoll_ctl(epollfd, EPOLL_CTL_ADD, wakealarm_fd, &ev) == -1)
+             KLOG_ERROR(LOG_TAG,
+@@ -234,7 +240,9 @@ static void healthd_mainloop(void) {
+    }
+ 
+     if (binder_fd >= 0) {
+-        ev.events = EPOLLIN | EPOLLWAKEUP;
++        ev.events = EPOLLIN;
++        if (!nowakeup)
++            ev.events |= EPOLLWAKEUP;
+         ev.data.ptr= (void *)binder_event;
+         if (epoll_ctl(epollfd, EPOLL_CTL_ADD, binder_fd, &ev) == -1)
+             KLOG_ERROR(LOG_TAG,
+@@ -275,17 +283,28 @@ int main(int argc, char **argv) {
+ 
+     klog_set_level(KLOG_LEVEL);
+ 
+-    while ((ch = getopt(argc, argv, "n")) != -1) {
++    while ((ch = getopt(argc, argv, "npw")) != -1) {
+         switch (ch) {
+         case 'n':
+             nosvcmgr = true;
+             break;
++        case 'p':
++            nopolling = true;
++            break;
++        case 'w':
++            nowakeup = true;
++            break;
+         case '?':
+         default:
+             KLOG_WARNING(LOG_TAG, "Unrecognized healthd option: %c\n", ch);
+         }
+     }
+ 
++    if (nopolling == true) {
++        healthd_config.periodic_chores_interval_fast = -1;
++        healthd_config.periodic_chores_interval_slow = -1;
++    }
++
+     healthd_board_init(&healthd_config);
+     wakealarm_init();
+     uevent_init();
+diff --git a/healthd/healthd_board_default.cpp b/healthd/healthd_board_default.cpp
+index 024b44f..b2bb516 100644
+--- a/healthd/healthd_board_default.cpp
++++ b/healthd/healthd_board_default.cpp
+@@ -25,5 +25,5 @@ void healthd_board_init(struct healthd_config *config)
+ int healthd_board_battery_update(struct android::BatteryProperties *props)
+ {
+     // return 0 to log periodic polled battery status to kernel log
+-    return 1;
++    return 0;
+ }
+diff --git a/init/builtins.c b/init/builtins.c
+index 4070578..58dbf36 100644
+--- a/init/builtins.c
++++ b/init/builtins.c
+@@ -523,6 +523,8 @@ int do_mount_all(int nargs, char **args)
+     int status;
+     const char *prop;
+     struct fstab *fstab;
++    char prop_val[PROP_VALUE_MAX];
++
+ 
+     if (nargs != 2) {
+         return -1;
+@@ -546,7 +548,12 @@ int do_mount_all(int nargs, char **args)
+     } else if (pid == 0) {
+         /* child, call fs_mgr_mount_all() */
+         klog_set_level(6);  /* So we can see what fs_mgr_mount_all() does */
+-        fstab = fs_mgr_read_fstab(args[1]);
++        ret = expand_props(prop_val, args[1], sizeof(prop_val));
++        if (ret) {
++            ERROR("cannot expand '%s' while assigning to '%s'\n", args[1], prop_val);
++            return -1;
++        }
++        fstab = fs_mgr_read_fstab(prop_val);
+         child_ret = fs_mgr_mount_all(fstab);
+         fs_mgr_free_fstab(fstab);
+         if (child_ret == -1) {
+diff --git a/init/init.c b/init/init.c
+index 3dd6b3d..dda6f8f 100644
+--- a/init/init.c
++++ b/init/init.c
+@@ -1302,7 +1302,7 @@ int main(int argc, char **argv)
+             continue;
+ 
+         for (i = 0; i < fd_count; i++) {
+-            if (ufds[i].revents & POLLIN) {
++            if (ufds[i].revents == POLLIN) {
+                 if (ufds[i].fd == get_property_set_fd())
+                     handle_property_set_fd();
+                 else if (ufds[i].fd == get_keychord_fd())
+diff --git a/init/init.h b/init/init.h
+index db94c29..408779f 100644
+--- a/init/init.h
++++ b/init/init.h
+@@ -76,7 +76,7 @@ struct svcenvinfo {
+ #define SVC_RESTART     0x100 /* Use to safely restart (stop, wait, start) a service */
+ 
+ #ifndef NR_SVC_SUPP_GIDS
+-#define NR_SVC_SUPP_GIDS 12    /* twelve supplementary groups */
++#define NR_SVC_SUPP_GIDS 12   /* twelve supplementary groups */
+ #endif
+ 
+ #define COMMAND_RETRY_TIMEOUT 5
+diff --git a/init/property_service.c b/init/property_service.c
+index 0b4845e..b08234c 100644
+--- a/init/property_service.c
++++ b/init/property_service.c
+@@ -65,6 +65,7 @@ struct {
+     unsigned int uid;
+     unsigned int gid;
+ } property_perms[] = {
++    { "net.rmnet0.",      AID_RADIO,    0 },
+     { "net.rmnet",        AID_RADIO,    0 },
+     { "net.gprs.",        AID_RADIO,    0 },
+     { "net.ppp",          AID_RADIO,    0 },
+@@ -84,7 +85,10 @@ struct {
+     { "sys.powerctl",     AID_SHELL,    0 },
+     { "service.",         AID_SYSTEM,   0 },
+     { "wlan.",            AID_SYSTEM,   0 },
+-    { "bluetooth.",       AID_BLUETOOTH,    0 },
++    { "wpa_supplicant.",  AID_WIFI,     0 },
++    { "gps.",             AID_GPS,      0 },
++    { "bluetooth.",       AID_BLUETOOTH,   0 },
++    { "nfc.",             AID_NFC,      0 },
+     { "dhcp.",            AID_SYSTEM,   0 },
+     { "dhcp.",            AID_DHCP,     0 },
+     { "debug.",           AID_SYSTEM,   0 },
+@@ -97,11 +101,16 @@ struct {
+     { "persist.service.", AID_SYSTEM,   0 },
+     { "persist.service.", AID_RADIO,    0 },
+     { "persist.security.", AID_SYSTEM,   0 },
++    { "persist.gps.",      AID_GPS,      0 },
+     { "persist.service.bdroid.", AID_BLUETOOTH,   0 },
++    { "media.",            AID_MEDIA,    0 },
++    { "camera.",           AID_MEDIA,    0 },
+     { "selinux."         , AID_SYSTEM,   0 },
+     { "wc_transport.",     AID_BLUETOOTH,   AID_SYSTEM },
+     { "net.pdp",          AID_RADIO,    AID_RADIO },
+     { "service.bootanim.exit", AID_GRAPHICS, 0 },
++    { "AudioComms.",       AID_MEDIA,    0 },
++    { "audiocomms.",       AID_MEDIA,    0 },
+ #ifdef PROPERTY_PERMS_APPEND
+ PROPERTY_PERMS_APPEND
+ #endif
+diff --git a/init/ueventd.c b/init/ueventd.c
+index 3d01836..a41c31e 100644
+--- a/init/ueventd.c
++++ b/init/ueventd.c
+@@ -94,7 +94,7 @@ int ueventd_main(int argc, char **argv)
+         nr = poll(&ufd, 1, -1);
+         if (nr <= 0)
+             continue;
+-        if (ufd.revents & POLLIN)
++        if (ufd.revents == POLLIN)
+                handle_device_fd();
+     }
+ }
+diff --git a/init/util.c b/init/util.c
+index 266e3bd..b82272e 100644
+--- a/init/util.c
++++ b/init/util.c
+@@ -409,6 +409,10 @@ void get_hardware_name(char *hardware, unsigned int *revision)
+     int fd, n;
+     char *x, *hw, *rev;
+ 
++    /* Hardware string was provided on kernel command line */
++    if (hardware[0])
++        return;
++
+     fd = open("/proc/cpuinfo", O_RDONLY);
+     if (fd < 0) return;
+ 
+diff --git a/libcorkscrew/arch-x86/backtrace-x86.c b/libcorkscrew/arch-x86/backtrace-x86.c
+index c7f29cf..e133ab6 100755
+--- a/libcorkscrew/arch-x86/backtrace-x86.c
++++ b/libcorkscrew/arch-x86/backtrace-x86.c
+@@ -18,12 +18,6 @@
+  * Backtracing functions for x86.
+  */
+ 
+-#ifndef __BIONIC__
+-// glibc has its own renaming of the Linux kernel's structures.
+-#define _GNU_SOURCE // For REG_EBP, REG_ESP, and REG_EIP.
+-#include <ucontext.h>
+-#endif
+-
+ #define LOG_TAG "Corkscrew"
+ //#define LOG_NDEBUG 0
+ 
+@@ -89,7 +83,7 @@ typedef struct ucontext {
+ #else
+ 
+ // glibc has its own renaming of the Linux kernel's structures.
+-#define _GNU_SOURCE // For REG_EBP, REG_ESP, and REG_EIP.
++#define __USE_GNU // For REG_EBP, REG_ESP, and REG_EIP.
+ #include <ucontext.h>
+ 
+ #endif
+diff --git a/libcutils/android_reboot.c b/libcutils/android_reboot.c
+index 326d402..f5beb04 100644
+--- a/libcutils/android_reboot.c
++++ b/libcutils/android_reboot.c
+@@ -127,14 +127,15 @@ int android_reboot(int cmd, int flags, char *arg)
+ 
+         case ANDROID_RB_POWEROFF:
+             ret = reboot(RB_POWER_OFF);
+-            return ret;
++            break;
+ 
+         case ANDROID_RB_RESTART2:
+-            // REBOOT_MAGIC
++            ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
++                           LINUX_REBOOT_CMD_RESTART2, arg);
+             break;
+ 
+         default:
+-            return -1;
++            ret = -1;
+     }
+ 
+ #ifdef RECOVERY_PRE_COMMAND_CLEAR_REASON
+@@ -143,9 +144,6 @@ int android_reboot(int cmd, int flags, char *arg)
+ 
+     if (reason != -1)
+         ret = reboot(reason);
+-    else
+-        ret = __reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2,
+-                           LINUX_REBOOT_CMD_RESTART2, arg);
+ 
+     return ret;
+ }
+diff --git a/libsuspend/autosuspend.c b/libsuspend/autosuspend.c
+index eb1f66e..7083dd0 100644
+--- a/libsuspend/autosuspend.c
++++ b/libsuspend/autosuspend.c
+@@ -48,10 +48,9 @@ static int autosuspend_init(void)
+         goto out;
+     }
+ 
+-    if (!autosuspend_ops) {
+-        ALOGE("failed to initialize autosuspend\n");
+-        return -1;
+-    }
++    autosuspend_inited = false;
++    ALOGE("failed to initialize autosuspend\n");
++    return -1;
+ 
+ out:
+     autosuspend_inited = true;
+diff --git a/libsuspend/autosuspend_earlysuspend.c b/libsuspend/autosuspend_earlysuspend.c
+index 1df8c6a..56310b4 100644
+--- a/libsuspend/autosuspend_earlysuspend.c
++++ b/libsuspend/autosuspend_earlysuspend.c
+@@ -143,7 +143,6 @@ static int autosuspend_earlysuspend_disable(void)
+     if (ret < 0) {
+         strerror_r(errno, buf, sizeof(buf));
+         ALOGE("Error writing to %s: %s\n", EARLYSUSPEND_SYS_POWER_STATE, buf);
+-        goto err;
+     }
+ 
+     if (wait_for_earlysuspend) {
+@@ -157,9 +156,6 @@ static int autosuspend_earlysuspend_disable(void)
+     ALOGV("autosuspend_earlysuspend_disable done\n");
+ 
+     return 0;
+-
+-err:
+-    return ret;
+ }
+ 
+ struct autosuspend_ops autosuspend_earlysuspend_ops = {
+@@ -208,20 +204,9 @@ struct autosuspend_ops *autosuspend_earlysuspend_init(void)
+         return NULL;
+     }
+ 
+-    ret = write(sPowerStatefd, "on", 2);
+-    if (ret < 0) {
+-        strerror_r(errno, buf, sizeof(buf));
+-        ALOGW("Error writing 'on' to %s: %s\n", EARLYSUSPEND_SYS_POWER_STATE, buf);
+-        goto err_write;
+-    }
+-
+     ALOGI("Selected early suspend\n");
+ 
+     start_earlysuspend_thread();
+ 
+     return &autosuspend_earlysuspend_ops;
+-
+-err_write:
+-    close(sPowerStatefd);
+-    return NULL;
+ }
+diff --git a/toolbox/Android.mk b/toolbox/Android.mk
+index 3e28494..b4e39ca 100644
+--- a/toolbox/Android.mk
++++ b/toolbox/Android.mk
+@@ -72,9 +72,9 @@ TOOLS := \
+ 	mkswap \
+ 	readlink
+ 
+-ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
++#ifneq (,$(filter userdebug eng,$(TARGET_BUILD_VARIANT)))
+ TOOLS += r
+-endif
++#endif
+ 
+ TOOLS += setfattr
+ 
+@@ -99,6 +99,11 @@ LOCAL_SHARED_LIBRARIES := \
+ 	libusbhost \
+ 	libselinux
+ 
++ifeq ($(INTEL_HOUDINI), true)
++    LOCAL_CFLAGS += -DWITH_HOUDINI
++    LOCAL_STATIC_LIBRARIES += houdini_hook
++endif
++
+ LOCAL_MODULE := toolbox
+ 
+ # Including this will define $(intermediates).
+diff --git a/toolbox/cat.c b/toolbox/cat.c
+index 6ac31f8..c80cbd3 100644
+--- a/toolbox/cat.c
++++ b/toolbox/cat.c
+@@ -183,6 +183,10 @@ raw_cat(int rfd)
+ 	}
+ }
+ 
++#ifdef WITH_HOUDINI
++extern int houdini_hook_open(const char *path, int flags, int mode);
++#endif
++
+ static void
+ raw_args(char **argv)
+ {
+@@ -196,7 +200,11 @@ raw_args(char **argv)
+ 				fd = fileno(stdin);
+ 			else if (fflag) {
+ 				struct stat st;
++#ifdef WITH_HOUDINI
++				fd = houdini_hook_open(*argv, O_RDONLY|O_NONBLOCK, 0);
++#else
+ 				fd = open(*argv, O_RDONLY|O_NONBLOCK, 0);
++#endif
+ 				if (fd < 0)
+ 					goto skip;
+ 
+@@ -210,7 +218,11 @@ raw_args(char **argv)
+ 					goto skipnomsg;
+ 				}
+ 			}
++#ifdef WITH_HOUDINI
++			else if ((fd = houdini_hook_open(*argv, O_RDONLY, 0)) < 0) {
++#else
+ 			else if ((fd = open(*argv, O_RDONLY, 0)) < 0) {
++#endif
+ skip:
+ 				perror(*argv);
+ skipnomsg:

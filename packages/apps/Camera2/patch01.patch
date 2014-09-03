@@ -1,0 +1,74 @@
+diff --git a/res/values/qcomarrays.xml b/res/values/qcomarrays.xml
+index 98da9e7..033648a 100644
+--- a/res/values/qcomarrays.xml
++++ b/res/values/qcomarrays.xml
+@@ -478,9 +478,11 @@
+         <item>@string/pref_camera_videoencoder_entry_0</item>
+         <item>@string/pref_camera_videoencoder_entry_1</item>
+         <item>@string/pref_camera_videoencoder_entry_2</item>
++        <item>@string/pref_camera_videoencoder_entry_3</item>
+     </string-array>
+ 
+     <string-array name="pref_camera_videoencoder_entryvalues" translatable="false">
++        <item>auto</item>
+         <item>m4v</item>
+         <item>h263</item>
+         <item>h264</item>
+diff --git a/res/values/qcomstrings.xml b/res/values/qcomstrings.xml
+index 33975ca..fc20a30 100644
+--- a/res/values/qcomstrings.xml
++++ b/res/values/qcomstrings.xml
+@@ -68,12 +68,13 @@
+     <string name="pref_camera_videoencoder_title">Video codec</string>
+ 
+     <!-- Settings screen, Video encoder dialog radio button choices -->
+-    <string name="pref_camera_videoencoder_entry_0" translatable="false">MPEG-4</string>
+-    <string name="pref_camera_videoencoder_entry_1" translatable="false">H.263</string>
+-    <string name="pref_camera_videoencoder_entry_2" translatable="false">H.264</string>
++	<string name="pref_camera_videoencoder_entry_0" translatable="false">Auto</string>
++    <string name="pref_camera_videoencoder_entry_1" translatable="false">MPEG-4</string>
++    <string name="pref_camera_videoencoder_entry_2" translatable="false">H.263</string>
++    <string name="pref_camera_videoencoder_entry_3" translatable="false">H.264</string>
+ 
+     <!-- Default video encoder setting. A numerical value. -->
+-    <string name="pref_camera_videoencoder_default" translatable="false">h264</string>
++    <string name="pref_camera_videoencoder_default" translatable="false">Auto</string>
+ 
+     <!-- Settings screen, Video encoder dialog title -->
+     <string name="pref_camera_videoencoder_dialogtitle">Video codec</string>
+diff --git a/src/com/android/camera/CameraHolder.java b/src/com/android/camera/CameraHolder.java
+index 0797fad..931dff0 100644
+--- a/src/com/android/camera/CameraHolder.java
++++ b/src/com/android/camera/CameraHolder.java
+@@ -62,7 +62,7 @@ public class CameraHolder {
+     private static CameraInfo mMockCameraInfo[];
+ 
+     /* Debug double-open issue */
+-    private static final boolean DEBUG_OPEN_RELEASE = true;
++    private static final boolean DEBUG_OPEN_RELEASE = false;
+     private static class OpenReleaseState {
+         long time;
+         int id;
+diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
+index e695494..53ecf16 100644
+--- a/src/com/android/camera/VideoModule.java
++++ b/src/com/android/camera/VideoModule.java
+@@ -289,6 +289,7 @@ public class VideoModule implements CameraModule,
+         OUTPUT_FORMAT_TABLE.put("mp4", MediaRecorder.OutputFormat.MPEG_4);
+         OUTPUT_FORMAT_TABLE.putDefault(MediaRecorder.OutputFormat.DEFAULT);
+ 
++		VIDEO_ENCODER_TABLE.put("auto", MediaRecorder.VideoEncoder.DEFAULT);
+         VIDEO_ENCODER_TABLE.put("h263", MediaRecorder.VideoEncoder.H263);
+         VIDEO_ENCODER_TABLE.put("h264", MediaRecorder.VideoEncoder.H264);
+         VIDEO_ENCODER_TABLE.put("m4v", MediaRecorder.VideoEncoder.MPEG_4_SP);
+@@ -1382,7 +1383,9 @@ public class VideoModule implements CameraModule,
+ 
+         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+ 
+-        mProfile.videoCodec = mVideoEncoder;
++		if(mVideoEncoder != MediaRecorder.VideoEncoder.DEFAULT)
++	        mProfile.videoCodec = mVideoEncoder;
++
+         mProfile.duration = mMaxVideoDurationInMs;
+ 
+         mMediaRecorder.setProfile(mProfile);
