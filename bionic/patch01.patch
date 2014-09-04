@@ -1,5 +1,5 @@
 diff --git a/libc/Android.mk b/libc/Android.mk
-index 1b02b78..6c17a32 100644
+index da193fb..737cdcf 100644
 --- a/libc/Android.mk
 +++ b/libc/Android.mk
 @@ -370,6 +370,7 @@ libc_common_src_files += \
@@ -10,19 +10,7 @@ index 1b02b78..6c17a32 100644
  	bionic/memrchr.c \
  	string/index.c \
  	bionic/strnlen.c \
-@@ -409,10 +410,7 @@ libc_common_src_files += \
- libc_static_common_src_files += \
-     bionic/pthread.c \
-     bionic/pthread_create.cpp \
--    bionic/pthread_key.cpp \
--
--libc_common_src_files += \
--    bionic/memchr.c
-+    bionic/pthread_key.cpp
- endif # x86
- 
- ifeq ($(TARGET_ARCH),mips)
-@@ -519,8 +517,10 @@ ifeq ($(TARGET_ARCH),arm)
+@@ -517,8 +518,10 @@ ifeq ($(TARGET_ARCH),arm)
  endif # !arm
  
  ifeq ($(TARGET_ARCH),x86)
