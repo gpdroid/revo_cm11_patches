@@ -1,8 +1,8 @@
 diff --git a/core/Makefile b/core/Makefile
-index 48469f6..acc22b1 100644
+index 4f4824b..d87aa81 100644
 --- a/core/Makefile
 +++ b/core/Makefile
-@@ -1388,7 +1388,7 @@ ifdef PRODUCT_EXTRA_RECOVERY_KEYS
+@@ -1394,7 +1394,7 @@ ifdef PRODUCT_EXTRA_RECOVERY_KEYS
  	$(hide) echo "extra_recovery_keys=$(PRODUCT_EXTRA_RECOVERY_KEYS)" >> $(zip_root)/META/misc_info.txt
  endif
  	$(hide) echo "mkbootimg_args=$(BOARD_MKBOOTIMG_ARGS)" >> $(zip_root)/META/misc_info.txt
@@ -11,12 +11,12 @@ index 48469f6..acc22b1 100644
  	$(hide) echo "multistage_support=1" >> $(zip_root)/META/misc_info.txt
  	$(hide) echo "update_rename_support=1" >> $(zip_root)/META/misc_info.txt
  	$(hide) echo "ota_script_path=$(OTA_FROM_TARGET_SCRIPT)" >> $(zip_root)/META/misc_info.txt
-diff --git a/tools/releasetools/img_from_target_files b/tools/releasetools/img_f
-index 61c5bc8..01caf01 100755
+diff --git a/tools/releasetools/img_from_target_files b/tools/releasetools/img_from_target_files
+index 61c5bc8..cfe05c8 100755
 --- a/tools/releasetools/img_from_target_files
 +++ b/tools/releasetools/img_from_target_files
 @@ -308,7 +308,7 @@ def main(argv):
-     OPTIONS.info_dict["selinux_fc"] = os.path.join(OPTIONS.input_tmp, "BOOT", "
+     OPTIONS.info_dict["selinux_fc"] = os.path.join(OPTIONS.input_tmp, "BOOT", "RAMDISK",
          "file_contexts")
  
 -  output_zip = zipfile.ZipFile(args[1], "w", compression=zipfile.ZIP_DEFLATED)

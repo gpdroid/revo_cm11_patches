@@ -22,10 +22,10 @@ index 9c398a7..41270f9 100644
              exit(1);
          }
 diff --git a/healthd/healthd.cpp b/healthd/healthd.cpp
-index 0c6bb01..5e24df8 100644
+index 8acc7fe..cdfb431 100644
 --- a/healthd/healthd.cpp
 +++ b/healthd/healthd.cpp
-@@ -81,6 +81,8 @@ static int wakealarm_wake_interval = DEFAULT_PERIODIC_CHORES_INTERVAL_FAST;
+@@ -88,6 +88,8 @@ static int wakealarm_wake_interval = DEFAULT_PERIODIC_CHORES_INTERVAL_FAST;
  static BatteryMonitor* gBatteryMonitor;
  
  static bool nosvcmgr;
@@ -34,7 +34,7 @@ index 0c6bb01..5e24df8 100644
  
  static void wakealarm_set_interval(int interval) {
      struct itimerspec itval;
-@@ -212,7 +214,9 @@ static void healthd_mainloop(void) {
+@@ -219,7 +221,9 @@ static void healthd_mainloop(void) {
      }
  
      if (uevent_fd >= 0) {
@@ -45,7 +45,7 @@ index 0c6bb01..5e24df8 100644
          ev.data.ptr = (void *)uevent_event;
          if (epoll_ctl(epollfd, EPOLL_CTL_ADD, uevent_fd, &ev) == -1)
              KLOG_ERROR(LOG_TAG,
-@@ -223,7 +227,9 @@ static void healthd_mainloop(void) {
+@@ -230,7 +234,9 @@ static void healthd_mainloop(void) {
      }
  
      if (wakealarm_fd >= 0) {
@@ -56,7 +56,7 @@ index 0c6bb01..5e24df8 100644
          ev.data.ptr = (void *)wakealarm_event;
          if (epoll_ctl(epollfd, EPOLL_CTL_ADD, wakealarm_fd, &ev) == -1)
              KLOG_ERROR(LOG_TAG,
-@@ -234,7 +240,9 @@ static void healthd_mainloop(void) {
+@@ -241,7 +247,9 @@ static void healthd_mainloop(void) {
     }
  
      if (binder_fd >= 0) {
@@ -67,7 +67,7 @@ index 0c6bb01..5e24df8 100644
          ev.data.ptr= (void *)binder_event;
          if (epoll_ctl(epollfd, EPOLL_CTL_ADD, binder_fd, &ev) == -1)
              KLOG_ERROR(LOG_TAG,
-@@ -275,17 +283,28 @@ int main(int argc, char **argv) {
+@@ -282,17 +290,28 @@ int main(int argc, char **argv) {
  
      klog_set_level(KLOG_LEVEL);
  

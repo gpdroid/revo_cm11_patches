@@ -1,5 +1,5 @@
 diff --git a/res/values/qcomarrays.xml b/res/values/qcomarrays.xml
-index 98da9e7..033648a 100644
+index 124dc57..34f5f16 100644
 --- a/res/values/qcomarrays.xml
 +++ b/res/values/qcomarrays.xml
 @@ -478,9 +478,11 @@
@@ -15,7 +15,7 @@ index 98da9e7..033648a 100644
          <item>h263</item>
          <item>h264</item>
 diff --git a/res/values/qcomstrings.xml b/res/values/qcomstrings.xml
-index 33975ca..fc20a30 100644
+index 1ffb74b..76e474c 100644
 --- a/res/values/qcomstrings.xml
 +++ b/res/values/qcomstrings.xml
 @@ -68,12 +68,13 @@
@@ -34,8 +34,8 @@ index 33975ca..fc20a30 100644
 -    <string name="pref_camera_videoencoder_default" translatable="false">h264</string>
 +    <string name="pref_camera_videoencoder_default" translatable="false">Auto</string>
  
-     <!-- Settings screen, Video encoder dialog title -->
-     <string name="pref_camera_videoencoder_dialogtitle">Video codec</string>
+     <!-- Default audio encoder setting. A numerical value. -->
+     <string name="pref_camera_audioencoder_default" translatable="false">aac</string>
 diff --git a/src/com/android/camera/CameraHolder.java b/src/com/android/camera/CameraHolder.java
 index 0797fad..931dff0 100644
 --- a/src/com/android/camera/CameraHolder.java
