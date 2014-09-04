@@ -65,6 +65,60 @@ index 22c29de..6befb3c 100644
  
          <!-- Change Log -->
          <PreferenceScreen android:key="changelog"
+diff --git a/res/xml/system_update.xml b/res/xml/system_update.xml
+new file mode 100644
+index 0000000..ef7a193
+--- /dev/null
++++ b/res/xml/system_update.xml
+@@ -0,0 +1,48 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (C) 2008 The Android Open Source Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++  
++          http://www.apache.org/licenses/LICENSE-2.0
++  
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++
++<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
++                  android:title="@string/system_update_settings_list_item_title">
++
++        <PreferenceScreen android:key="system_update_from_ota"
++                          android:title="@string/update_from_ota"
++                          android:icon="@drawable/ic_tab_updates">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.OTA" />
++        </PreferenceScreen>
++        <PreferenceScreen android:key="system_install_gapps"
++                          android:title="@string/install_gapps"
++                          android:icon="@drawable/ic_settings_applications">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.Gapps" />
++        </PreferenceScreen>
++        <PreferenceScreen android:key="system_install_os"
++                          android:title="@string/install_other_os"
++                          android:icon="@drawable/ic_settings_dock">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.OS" />
++        </PreferenceScreen>
++        <PreferenceScreen android:key="system_update_from_storage"
++                          android:title="@string/update_from_storage"
++                          android:icon="@drawable/ic_tab_selected_sdcard">
++            <intent android:action="android.intent.action.MAIN"
++                    android:targetPackage="com.gp.updater"
++                    android:targetClass="com.gp.updater.Storage" />
++        </PreferenceScreen>
++</PreferenceScreen>
 diff --git a/src/com/android/settings/DeviceInfoSettings.java b/src/com/android/settings/DeviceInfoSettings.java
 index b1a27fb..11ffdb3 100644
 --- a/src/com/android/settings/DeviceInfoSettings.java
@@ -216,3 +270,74 @@ index ce37776..2168ad7 100644
 +        }
 +    }    
  }
+diff --git a/src/com/android/settings/deviceinfo/Update.java b/src/com/android/settings/deviceinfo/Update.java
+new file mode 100644
+index 0000000..07c74bf
+--- /dev/null
++++ b/src/com/android/settings/deviceinfo/Update.java
+@@ -0,0 +1,64 @@
++/*
++ * Copyright (C) 2008 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings.deviceinfo;
++
++import java.io.File;
++import android.net.Uri;
++import android.content.DialogInterface;
++import android.app.AlertDialog;
++import android.content.DialogInterface.OnClickListener;
++import android.content.BroadcastReceiver;
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
++import android.content.res.Resources;
++import android.os.Bundle;
++import android.os.Handler;
++import android.preference.Preference;
++import android.preference.PreferenceActivity;
++import android.preference.PreferenceScreen;
++import android.text.TextUtils;
++import android.view.Window;
++import android.graphics.PixelFormat;
++import android.util.Log;
++import android.os.Environment;
++import com.android.settings.R;
++
++import java.lang.ref.WeakReference;
++
++/**
++ * System updates 
++ * # update from usb storage
++ * # update form OTA
++ */
++public class Update extends PreferenceActivity {
++    private static final String TAG = "Update";
++    
++    @Override
++    protected void onCreate(Bundle icicle) {
++        super.onCreate(icicle);
++
++        addPreferencesFromResource(R.xml.system_update);
++       getWindow().setFormat(PixelFormat.TRANSLUCENT);
++    }
++
++    @Override
++    public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) {
++        return super.onPreferenceTreeClick(preferenceScreen, preference);
++    }
++
++}
+
