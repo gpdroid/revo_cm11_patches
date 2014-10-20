@@ -203,10 +203,10 @@ index 0b4845e..b08234c 100644
  PROPERTY_PERMS_APPEND
  #endif
 diff --git a/init/ueventd.c b/init/ueventd.c
-index 3d01836..a41c31e 100644
+index b973185..53cc9ac 100644
 --- a/init/ueventd.c
 +++ b/init/ueventd.c
-@@ -94,7 +94,7 @@ int ueventd_main(int argc, char **argv)
+@@ -99,7 +99,7 @@ int ueventd_main(int argc, char **argv)
          nr = poll(&ufd, 1, -1);
          if (nr <= 0)
              continue;
@@ -216,7 +216,7 @@ index 3d01836..a41c31e 100644
      }
  }
 diff --git a/init/util.c b/init/util.c
-index 266e3bd..b82272e 100644
+index f9216ea..635bb65 100644
 --- a/init/util.c
 +++ b/init/util.c
 @@ -409,6 +409,10 @@ void get_hardware_name(char *hardware, unsigned int *revision)
@@ -231,29 +231,29 @@ index 266e3bd..b82272e 100644
      if (fd < 0) return;
  
 diff --git a/libcorkscrew/arch-x86/backtrace-x86.c b/libcorkscrew/arch-x86/backtrace-x86.c
-index c7f29cf..e133ab6 100755
+index 9c4428c..1677999 100755
 --- a/libcorkscrew/arch-x86/backtrace-x86.c
 +++ b/libcorkscrew/arch-x86/backtrace-x86.c
-@@ -18,12 +18,6 @@
+@@ -18,13 +18,6 @@
   * Backtracing functions for x86.
   */
  
 -#ifndef __BIONIC__
 -// glibc has its own renaming of the Linux kernel's structures.
--#define _GNU_SOURCE // For REG_EBP, REG_ESP, and REG_EIP.
--#include <ucontext.h>
+-// define this here, so that it's defined before the first inclusion
+-// of glibc's features.h
+-#  define _GNU_SOURCE // For REG_EBP, REG_ESP, and REG_EIP.
 -#endif
 -
  #define LOG_TAG "Corkscrew"
  //#define LOG_NDEBUG 0
  
-@@ -89,7 +83,7 @@ typedef struct ucontext {
- #else
+@@ -90,6 +83,7 @@ typedef struct ucontext {
+ #else /* ! __BIONIC__ && ! __APPLE__ */
  
- // glibc has its own renaming of the Linux kernel's structures.
--#define _GNU_SOURCE // For REG_EBP, REG_ESP, and REG_EIP.
+ /* _GNU_SOURCE is already defined above */
 +#define __USE_GNU // For REG_EBP, REG_ESP, and REG_EIP.
- #include <ucontext.h>
+ #  include <ucontext.h>
  
  #endif
 diff --git a/libcutils/android_reboot.c b/libcutils/android_reboot.c

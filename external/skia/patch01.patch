@@ -1,5 +1,5 @@
 diff --git a/src/core/SkPaint.cpp b/src/core/SkPaint.cpp
-index f779aaa..9bb4541 100644
+index 71199c7..352f405 100644
 --- a/src/core/SkPaint.cpp
 +++ b/src/core/SkPaint.cpp
 @@ -137,6 +137,7 @@ start:
@@ -9,9 +9,9 @@ index f779aaa..9bb4541 100644
 +#if 0
  extern "C" {
      inline void memcpy_paint_opt(int* src, int* dst) {
- 
-@@ -158,7 +159,7 @@ extern "C" {
-         );
+ #ifdef ARCH_ARM
+@@ -162,7 +163,7 @@ extern "C" {
+ #endif /* ARCH_ARM */
      }
  }
 -
@@ -19,7 +19,7 @@ index f779aaa..9bb4541 100644
  SkPaint::SkPaint() {
      // since we may have padding, we zero everything so that our memcmp() call
      // in operator== will work correctly.
-@@ -203,9 +204,11 @@ SkPaint::SkPaint() {
+@@ -207,9 +208,11 @@ SkPaint::SkPaint() {
  }
  
  SkPaint::SkPaint(const SkPaint& src) {

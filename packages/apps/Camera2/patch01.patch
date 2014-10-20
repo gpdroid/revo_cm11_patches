@@ -1,5 +1,5 @@
 diff --git a/res/values/qcomarrays.xml b/res/values/qcomarrays.xml
-index 124dc57..34f5f16 100644
+index a94fd6b..3f36411 100644
 --- a/res/values/qcomarrays.xml
 +++ b/res/values/qcomarrays.xml
 @@ -478,9 +478,11 @@
@@ -15,7 +15,7 @@ index 124dc57..34f5f16 100644
          <item>h263</item>
          <item>h264</item>
 diff --git a/res/values/qcomstrings.xml b/res/values/qcomstrings.xml
-index 1ffb74b..76e474c 100644
+index 919d6be..bd7e307 100644
 --- a/res/values/qcomstrings.xml
 +++ b/res/values/qcomstrings.xml
 @@ -68,12 +68,13 @@
@@ -50,7 +50,7 @@ index 0797fad..931dff0 100644
          long time;
          int id;
 diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
-index e695494..53ecf16 100644
+index 6d4ddc4..917b1e9 100644
 --- a/src/com/android/camera/VideoModule.java
 +++ b/src/com/android/camera/VideoModule.java
 @@ -289,6 +289,7 @@ public class VideoModule implements CameraModule,
@@ -61,7 +61,7 @@ index e695494..53ecf16 100644
          VIDEO_ENCODER_TABLE.put("h263", MediaRecorder.VideoEncoder.H263);
          VIDEO_ENCODER_TABLE.put("h264", MediaRecorder.VideoEncoder.H264);
          VIDEO_ENCODER_TABLE.put("m4v", MediaRecorder.VideoEncoder.MPEG_4_SP);
-@@ -1382,7 +1383,9 @@ public class VideoModule implements CameraModule,
+@@ -1381,7 +1382,9 @@ public class VideoModule implements CameraModule,
  
          mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
  

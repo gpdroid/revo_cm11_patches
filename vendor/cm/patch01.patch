@@ -1,8 +1,8 @@
 diff --git a/config/common.mk b/config/common.mk
-index ae21644..9a8b294 100644
+index d32640c..5634ab2 100644
 --- a/config/common.mk
 +++ b/config/common.mk
-@@ -215,9 +215,9 @@ PRODUCT_PACKAGES += \
+@@ -217,9 +217,9 @@ PRODUCT_PACKAGES += \
      su
  
  # Terminal Emulator

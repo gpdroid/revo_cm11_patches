@@ -1,8 +1,8 @@
 diff --git a/AndroidManifest.xml b/AndroidManifest.xml
-index 9389559..f736677 100644
+index 15fe611..389f16f 100644
 --- a/AndroidManifest.xml
 +++ b/AndroidManifest.xml
-@@ -1994,6 +1994,14 @@
+@@ -2007,6 +2007,14 @@
              <meta-data android:name="com.android.settings.TOP_LEVEL_HEADER_ID"
                  android:resource="@id/display_settings" />
          </activity>
@@ -18,21 +18,22 @@ index 9389559..f736677 100644
          <activity android:name="Settings$UserSettingsActivity"
                  android:uiOptions="splitActionBarWhenNarrow"
 diff --git a/res/values/strings.xml b/res/values/strings.xml
-index c8497cc..1f03a5d 100644
+index 862dce7..52df41a 100644
 --- a/res/values/strings.xml
 +++ b/res/values/strings.xml
-@@ -4981,4 +4981,9 @@
-     <string name="saturation_str">Saturation: <xliff:g id="saturation_value">%1$s</xliff:g></string>
-     <string name="contrast_str">Contrast: <xliff:g id="contrast_value">%1$s</xliff:g></string>
-     <string name="intensity_str">Intensity: <xliff:g id="intensity_str_value">%1$s</xliff:g></string>
-+    <!-- System Updates Menu -->
+@@ -4904,4 +4904,10 @@
+ 
+     <!-- Text to display in regulatory info screen (from device overlay). -->
+     <string name="regulatory_info_text"></string>
++
++	<!-- System Updates Menu -->
 +    <string name="update_from_storage">Install zip from internal SD</string> 
 +    <string name="update_from_ota">Update from OTA</string>
 +    <string name="install_gapps">Install Google Apps(tm)</string>
 +    <string name="install_other_os">Install another OS</string>
  </resources>
 diff --git a/res/xml/device_info_settings.xml b/res/xml/device_info_settings.xml
-index 22c29de..6befb3c 100644
+index fe30b54..3aba697 100644
 --- a/res/xml/device_info_settings.xml
 +++ b/res/xml/device_info_settings.xml
 @@ -21,9 +21,9 @@
@@ -66,9 +67,8 @@ index 22c29de..6befb3c 100644
          <!-- Change Log -->
          <PreferenceScreen android:key="changelog"
 diff --git a/res/xml/system_update.xml b/res/xml/system_update.xml
-new file mode 100644
-index 0000000..ef7a193
---- /dev/null
+index e69de29..ef7a193 100644
+--- a/res/xml/system_update.xml
 +++ b/res/xml/system_update.xml
 @@ -0,0 +1,48 @@
 +<?xml version="1.0" encoding="utf-8"?>
@@ -271,9 +271,8 @@ index ce37776..2168ad7 100644
 +    }    
  }
 diff --git a/src/com/android/settings/deviceinfo/Update.java b/src/com/android/settings/deviceinfo/Update.java
-new file mode 100644
-index 0000000..07c74bf
---- /dev/null
+index e69de29..c257998 100644
+--- a/src/com/android/settings/deviceinfo/Update.java
 +++ b/src/com/android/settings/deviceinfo/Update.java
 @@ -0,0 +1,64 @@
 +/*
@@ -340,4 +339,3 @@ index 0000000..07c74bf
 +    }
 +
 +}
-

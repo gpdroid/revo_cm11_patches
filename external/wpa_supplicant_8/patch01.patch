@@ -1,8 +1,8 @@
 diff --git a/wpa_supplicant/p2p_supplicant.c b/wpa_supplicant/p2p_supplicant.c
-index 9a4e42f..9614b04 100644
+index e339d0e..9693614 100644
 --- a/wpa_supplicant/p2p_supplicant.c
 +++ b/wpa_supplicant/p2p_supplicant.c
-@@ -3319,9 +3319,15 @@ int wpas_p2p_init(struct wpa_global *global, struct wpa_supplicant *wpa_s)
+@@ -3326,9 +3326,15 @@ int wpas_p2p_init(struct wpa_global *global, struct wpa_supplicant *wpa_s)
  	if (wpa_s->conf->p2p_disabled)
  		return 0;
  
