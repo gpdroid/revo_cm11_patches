@@ -553,6 +553,313 @@ index a75c8f9..2c17cb4 100644
              CHECK_EQ((int)mPortStatus[kPortIndexOutput], (int)ENABLED);
              CHECK_EQ((int)info->mStatus, (int)OWNED_BY_CLIENT);
  
+diff --git a/media/libstagefright/ThreadedSource.cpp b/media/libstagefright/ThreadedSource.cpp
+index e69de29..c3f3ea0 100644
+--- a/media/libstagefright/ThreadedSource.cpp
++++ b/media/libstagefright/ThreadedSource.cpp
+@@ -0,0 +1,218 @@
++/*
++ * Copyright (C) 2010 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#define LOG_TAG "ThreadedSource"
++//#define LOG_NDEBUG 0
++#include <utils/Log.h>
++
++#include "include/ThreadedSource.h"
++
++#include <media/stagefright/foundation/ADebug.h>
++#include <media/stagefright/foundation/AMessage.h>
++#include <media/stagefright/MediaBuffer.h>
++#include <media/stagefright/MetaData.h>
++
++namespace android {
++
++ThreadedSource::ThreadedSource(const sp<MediaSource> &source, int size)
++    : mSource(source),
++      mReflector(new AHandlerReflector<ThreadedSource>(this)),
++      mLooper(new ALooper),
++      mStarted(false),
++      mMaxQueueSize(size) {
++    mLooper->registerHandler(mReflector);
++}
++
++ThreadedSource::~ThreadedSource() {
++    if (mStarted) {
++        stop();
++    }
++}
++
++status_t ThreadedSource::start(MetaData *params) {
++    CHECK(!mStarted);
++
++    status_t err = mSource->start(params);
++
++    if (err != OK) {
++        return err;
++    }
++
++    mFinalResult = OK;
++    mSeekTimeUs = -1;
++    mReadPending = false;
++
++    Mutex::Autolock autoLock(mLock);
++    postReadMore_l();
++
++    CHECK_EQ(mLooper->start(), (status_t)OK);
++
++    mStarted = true;
++
++    return OK;
++}
++
++status_t ThreadedSource::stop() {
++    CHECK(mStarted);
++
++    CHECK_EQ(mLooper->stop(), (status_t)OK);
++
++    Mutex::Autolock autoLock(mLock);
++    clearQueue_l();
++
++    status_t err = mSource->stop();
++
++    mStarted = false;
++
++    return err;
++}
++
++sp<MetaData> ThreadedSource::getFormat() {
++    return mSource->getFormat();
++}
++
++status_t ThreadedSource::read(
++        MediaBuffer **buffer, const ReadOptions *options) {
++    *buffer = NULL;
++
++    Mutex::Autolock autoLock(mLock);
++
++    int64_t seekTimeUs;
++    ReadOptions::SeekMode seekMode;
++    if (options && options->getSeekTo(&seekTimeUs, &seekMode)) {
++        int32_t seekComplete = 0;
++
++        sp<AMessage> msg = new AMessage(kWhatSeek, mReflector->id());
++        msg->setInt64("timeUs", seekTimeUs);
++        msg->setInt32("mode", seekMode);
++        msg->setPointer("complete", &seekComplete);
++        msg->post();
++
++        while (!seekComplete) {
++            status_t err = mCondition.wait(mLock);
++            if (err != OK) {
++                return err;
++            }
++        }
++    }
++
++    while (mQueue.empty() && mFinalResult == OK) {
++        status_t err = mCondition.wait(mLock);
++        if (err != OK) {
++            return err;
++        }
++    }
++
++    if (!mQueue.empty()) {
++        *buffer = *mQueue.begin();
++        mQueue.erase(mQueue.begin());
++
++        if (mFinalResult == OK) {
++            postReadMore_l();
++        }
++
++        return OK;
++    }
++
++    return mFinalResult;
++}
++
++void ThreadedSource::onMessageReceived(const sp<AMessage> &msg) {
++    switch (msg->what()) {
++        case kWhatSeek:
++        {
++            CHECK(msg->findInt64("timeUs", &mSeekTimeUs));
++            CHECK_GE(mSeekTimeUs, 0ll);
++
++            int32_t x;
++            CHECK(msg->findInt32("mode", &x));
++            mSeekMode = (ReadOptions::SeekMode)x;
++
++            int32_t *seekComplete;
++            CHECK(msg->findPointer("complete", (void **)&seekComplete));
++
++            Mutex::Autolock autoLock(mLock);
++            clearQueue_l();
++            mFinalResult = OK;
++
++            *seekComplete = 1;
++            mCondition.signal();
++
++            postReadMore_l();
++            break;
++        }
++
++        case kWhatReadMore:
++        {
++            {
++                Mutex::Autolock autoLock(mLock);
++                mReadPending = false;
++
++                if (mQueue.size() == mMaxQueueSize) {
++                    break;
++                }
++            }
++
++            MediaBuffer *buffer;
++            ReadOptions options;
++            if (mSeekTimeUs >= 0) {
++                options.setSeekTo(mSeekTimeUs, mSeekMode);
++                mSeekTimeUs = -1ll;
++            }
++            status_t err = mSource->read(&buffer, &options);
++
++            Mutex::Autolock autoLock(mLock);
++
++            if (err != OK) {
++                mFinalResult = err;
++            } else {
++                mQueue.push_back(buffer);
++
++                if (mQueue.size() < mMaxQueueSize) {
++                    postReadMore_l();
++                }
++            }
++
++            mCondition.signal();
++            break;
++        }
++
++        default:
++            TRESPASS();
++            break;
++    }
++}
++
++void ThreadedSource::postReadMore_l() {
++    if (mReadPending) {
++        return;
++    }
++
++    mReadPending = true;
++    (new AMessage(kWhatReadMore, mReflector->id()))->post();
++}
++
++void ThreadedSource::clearQueue_l() {
++    while (!mQueue.empty()) {
++        MediaBuffer *buffer = *mQueue.begin();
++        mQueue.erase(mQueue.begin());
++
++        buffer->release();
++        buffer = NULL;
++    }
++}
++
++}  // namespace android
+diff --git a/media/libstagefright/include/ThreadedSource.h b/media/libstagefright/include/ThreadedSource.h
+index e69de29..42d0d96 100644
+--- a/media/libstagefright/include/ThreadedSource.h
++++ b/media/libstagefright/include/ThreadedSource.h
+@@ -0,0 +1,79 @@
++/*
++ * Copyright (C) 2010 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef THREADED_SOURCE_H_
++
++#define THREADED_SOURCE_H_
++
++#include <media/stagefright/foundation/ABase.h>
++#include <media/stagefright/foundation/AHandlerReflector.h>
++#include <media/stagefright/foundation/ALooper.h>
++#include <media/stagefright/MediaSource.h>
++#include <utils/threads.h>
++
++namespace android {
++
++struct ThreadedSource : public MediaSource {
++    ThreadedSource(const sp<MediaSource> &source, int size = kMaxQueueSize);
++
++    virtual status_t start(MetaData *params);
++    virtual status_t stop();
++
++    virtual sp<MetaData> getFormat();
++
++    virtual status_t read(
++            MediaBuffer **buffer, const ReadOptions *options);
++
++    virtual void onMessageReceived(const sp<AMessage> &msg);
++
++protected:
++    virtual ~ThreadedSource();
++
++private:
++    enum {
++        kWhatReadMore = 'read',
++        kWhatSeek       = 'seek',
++    };
++
++    sp<MediaSource> mSource;
++    sp<AHandlerReflector<ThreadedSource> > mReflector;
++    sp<ALooper> mLooper;
++
++    Mutex mLock;
++    Condition mCondition;
++    List<MediaBuffer *> mQueue;
++    status_t mFinalResult;
++    bool mReadPending;
++    bool mStarted;
++
++    int mMaxQueueSize;
++
++    int64_t mSeekTimeUs;
++    ReadOptions::SeekMode mSeekMode;
++
++    enum {
++        kMaxQueueSize = 10,
++    };
++
++    void postReadMore_l();
++    void clearQueue_l();
++
++    DISALLOW_EVIL_CONSTRUCTORS(ThreadedSource);
++};
++
++}  // namespace android
++
++#endif  // THREADED_SOURCE_H_
 diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
 index eab3c2a..cc013a0 100644
 --- a/services/camera/libcameraservice/CameraService.cpp
