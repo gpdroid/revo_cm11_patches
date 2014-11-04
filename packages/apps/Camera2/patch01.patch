@@ -1,8 +1,8 @@
 diff --git a/res/values/qcomarrays.xml b/res/values/qcomarrays.xml
-index a94fd6b..3f36411 100644
+index 9a70a06..04153d0 100644
 --- a/res/values/qcomarrays.xml
 +++ b/res/values/qcomarrays.xml
-@@ -478,9 +478,11 @@
+@@ -502,9 +502,11 @@
          <item>@string/pref_camera_videoencoder_entry_0</item>
          <item>@string/pref_camera_videoencoder_entry_1</item>
          <item>@string/pref_camera_videoencoder_entry_2</item>
@@ -15,27 +15,27 @@ index a94fd6b..3f36411 100644
          <item>h263</item>
          <item>h264</item>
 diff --git a/res/values/qcomstrings.xml b/res/values/qcomstrings.xml
-index 919d6be..bd7e307 100644
+index fb782b6..9396903 100644
 --- a/res/values/qcomstrings.xml
 +++ b/res/values/qcomstrings.xml
-@@ -68,12 +68,13 @@
+@@ -54,12 +54,13 @@
+ 
+     <!-- Settings screen, Video encoder title -->
      <string name="pref_camera_videoencoder_title">Video codec</string>
+-    <string name="pref_camera_videoencoder_default" translatable="false">h264</string>
++    <string name="pref_camera_videoencoder_default" translatable="false">auto</string>
  
      <!-- Settings screen, Video encoder dialog radio button choices -->
 -    <string name="pref_camera_videoencoder_entry_0" translatable="false">MPEG-4</string>
 -    <string name="pref_camera_videoencoder_entry_1" translatable="false">H.263</string>
 -    <string name="pref_camera_videoencoder_entry_2" translatable="false">H.264</string>
-+	<string name="pref_camera_videoencoder_entry_0" translatable="false">Auto</string>
++    <string name="pref_camera_videoencoder_entry_0" translatable="false">Auto</string>
 +    <string name="pref_camera_videoencoder_entry_1" translatable="false">MPEG-4</string>
 +    <string name="pref_camera_videoencoder_entry_2" translatable="false">H.263</string>
 +    <string name="pref_camera_videoencoder_entry_3" translatable="false">H.264</string>
  
-     <!-- Default video encoder setting. A numerical value. -->
--    <string name="pref_camera_videoencoder_default" translatable="false">h264</string>
-+    <string name="pref_camera_videoencoder_default" translatable="false">Auto</string>
- 
-     <!-- Default audio encoder setting. A numerical value. -->
-     <string name="pref_camera_audioencoder_default" translatable="false">aac</string>
+     <!-- Settings screen, Audio encoder title -->
+     <string name="pref_camera_audioencoder_title">Audio codec</string>
 diff --git a/src/com/android/camera/CameraHolder.java b/src/com/android/camera/CameraHolder.java
 index 0797fad..931dff0 100644
 --- a/src/com/android/camera/CameraHolder.java
@@ -50,7 +50,7 @@ index 0797fad..931dff0 100644
          long time;
          int id;
 diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
-index 6d4ddc4..917b1e9 100644
+index 72e5b32..552a4e4 100644
 --- a/src/com/android/camera/VideoModule.java
 +++ b/src/com/android/camera/VideoModule.java
 @@ -289,6 +289,7 @@ public class VideoModule implements CameraModule,

@@ -27,7 +27,7 @@ index c1e49bc..ef2beda 100644
          if (result == -1) {
              ALOGE("Binder ioctl to obtain version failed: %s", strerror(errno));
 diff --git a/libs/gui/BufferQueue.cpp b/libs/gui/BufferQueue.cpp
-index 5f2c370..f6397e5 100644
+index 146f534..decbfd3 100644
 --- a/libs/gui/BufferQueue.cpp
 +++ b/libs/gui/BufferQueue.cpp
 @@ -33,6 +33,8 @@
@@ -39,7 +39,7 @@ index 5f2c370..f6397e5 100644
  // Macros for including the BufferQueue name in log messages
  #define ST_LOGV(x, ...) ALOGV("[%s] "x, mConsumerName.string(), ##__VA_ARGS__)
  #define ST_LOGD(x, ...) ALOGD("[%s] "x, mConsumerName.string(), ##__VA_ARGS__)
-@@ -375,7 +377,10 @@ status_t BufferQueue::dequeueBuffer(int *outBuf, sp<Fence>* outFence, bool async
+@@ -377,7 +379,10 @@ status_t BufferQueue::dequeueBuffer(int *outBuf, sp<Fence>* outFence, bool async
                      ST_LOGE("dequeueBuffer: would block! returning an error instead.");
                      return WOULD_BLOCK;
                  }
@@ -253,7 +253,7 @@ index e69de29..85698ca 100644
 +
 +#endif // ANDROID_SECOND_ORDER_LOW_PASS_FILTER_H
 diff --git a/services/sensorservice/SensorService.cpp b/services/sensorservice/SensorService.cpp
-index b1ed763..9410d83 100644
+index 4b22af1..d93078c 100644
 --- a/services/sensorservice/SensorService.cpp
 +++ b/services/sensorservice/SensorService.cpp
 @@ -45,6 +45,7 @@
@@ -264,33 +264,11 @@ index b1ed763..9410d83 100644
  #include "RotationVectorSensor.h"
  #include "SensorFusion.h"
  #include "SensorService.h"
-@@ -80,6 +81,8 @@ void SensorService::onFirstRef()
-         if (count > 0) {
-             ssize_t orientationIndex = -1;
-             bool hasGyro = false;
-+            bool hasMag = false;
-+            bool hasAccel = false;
-             uint32_t virtualSensorsNeeds =
-                     (1<<SENSOR_TYPE_GRAVITY) |
-                     (1<<SENSOR_TYPE_LINEAR_ACCELERATION) |
-@@ -96,6 +99,12 @@ void SensorService::onFirstRef()
-                     case SENSOR_TYPE_GYROSCOPE_UNCALIBRATED:
-                         hasGyro = true;
-                         break;
-+                    case SENSOR_TYPE_ACCELEROMETER:
-+                        hasAccel = true;
-+                        break;
-+                    case SENSOR_TYPE_MAGNETIC_FIELD:
-+                        hasMag = true;
-+                        break;
-                     case SENSOR_TYPE_GRAVITY:
-                     case SENSOR_TYPE_LINEAR_ACCELERATION:
-                     case SENSOR_TYPE_ROTATION_VECTOR:
-@@ -104,6 +113,14 @@ void SensorService::onFirstRef()
+@@ -112,6 +113,14 @@ void SensorService::onFirstRef()
                  }
              }
  
-+            if (hasAccel && hasMag && !hasGyro) {
++            if (hasAccelerometer && hasMagnetometer && !hasGyro) {
 +                // CTS test defines device has to support orientation sensor
 +                // if accelerometer sensor and magnetic sensor are available.
 +                // However framework does not provide orientation sensor if
@@ -301,7 +279,7 @@ index b1ed763..9410d83 100644
              // it's safe to instantiate the SensorFusion object here
              // (it wants to be instantiated after h/w sensors have been
              // registered)
-@@ -137,7 +154,11 @@ void SensorService::onFirstRef()
+@@ -145,7 +154,11 @@ void SensorService::onFirstRef()
                  if (virtualSensorsNeeds & (1<<SENSOR_TYPE_ROTATION_VECTOR)) {
                      // if we are doing our own rotation-vector, also add
                      // the orientation sensor and remove the HAL provided one.

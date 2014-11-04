@@ -1,8 +1,8 @@
 diff --git a/AndroidManifest.xml b/AndroidManifest.xml
-index 15fe611..389f16f 100644
+index 1b8adeb..1b9d9b7 100644
 --- a/AndroidManifest.xml
 +++ b/AndroidManifest.xml
-@@ -2007,6 +2007,14 @@
+@@ -1994,6 +1994,14 @@
              <meta-data android:name="com.android.settings.TOP_LEVEL_HEADER_ID"
                  android:resource="@id/display_settings" />
          </activity>
@@ -120,16 +120,16 @@ index e69de29..ef7a193 100644
 +        </PreferenceScreen>
 +</PreferenceScreen>
 diff --git a/src/com/android/settings/DeviceInfoSettings.java b/src/com/android/settings/DeviceInfoSettings.java
-index b1a27fb..11ffdb3 100644
+index efc9de7..5bcc0ca 100644
 --- a/src/com/android/settings/DeviceInfoSettings.java
 +++ b/src/com/android/settings/DeviceInfoSettings.java
 @@ -127,15 +127,28 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
          removePreferenceIfPropertyMissing(getPreferenceScreen(), KEY_SELINUX_STATUS,
                  PROPERTY_SELINUX_STATUS);
  
--        String cpuInfo = getCPUInfo();
+-        final String cpuInfo = getCPUInfo();
 -        String memInfo = getMemInfo();
-+String cpuInfo = null;
++        String cpuInfo = null;
 +		try{
 +			cpuInfo = getCPUInfo();
 +		}catch (IOException ie){
@@ -179,7 +179,7 @@ index b1a27fb..11ffdb3 100644
          } else {
              // Remove for secondary users
              removePreference(KEY_SYSTEM_UPDATE_SETTINGS);
-@@ -402,42 +416,43 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
+@@ -402,64 +416,44 @@ public class DeviceInfoSettings extends RestrictedSettingsFragment {
          return "";
      }
  
@@ -214,25 +214,47 @@ index b1a27fb..11ffdb3 100644
 +                result = Long.parseLong(parts[1])/1024 + " MB";
              }
 -        } catch (IOException e) {}
-+		}
++	}
  
          return result;
      }
  
 -    private String getCPUInfo() {
-+    private String getCPUInfo() throws IOException {
++	private String getCPUInfo() throws IOException {
          String result = null;
-+		BufferedReader reader = new BufferedReader(new FileReader(FILENAME_PROC_CPUINFO), 256);
+         int coreCount = 0;
++	BufferedReader reader = new BufferedReader(new FileReader(FILENAME_PROC_CPUINFO), 256);
  
          try {
 -            /* The expected /proc/cpuinfo output is as follows:
 -             * Processor	: ARMv7 Processor rev 2 (v7l)
 -             * BogoMIPS	: 272.62
+-             *
+-             * On kernel 3.10 this changed, it is now the last
+-             * line. So let's read the whole thing, search
+-             * specifically for "Processor", and retain the old
+-             * "first line" as fallback.
+-             * Also, use "processor : <id>" to count cores
 -             */
--            String firstLine = readLine(FILENAME_PROC_CPUINFO);
--            if (firstLine != null) {
+-            BufferedReader ci = new BufferedReader(new FileReader(FILENAME_PROC_CPUINFO));
+-            String firstLine = ci.readLine();
+-            String latestLine = firstLine;
+-            while (latestLine != null) {
+-                if (latestLine.startsWith("Processor"))
+-                  result = latestLine.split(":")[1].trim();
+-                if (latestLine.startsWith("processor"))
+-                  coreCount++;
+-                latestLine = ci.readLine();
+-            }
+-            if (result == null && firstLine != null) {
 -                result = firstLine.split(":")[1].trim();
 -            }
+-            /* Don't do this. hotplug throws off the count
+-            if (coreCount > 1) {
+-                result = result + " (x" + coreCount + ")";
+-            }
+-            */
+-            ci.close();
 -        } catch (IOException e) {}
 +            String cpuInfo = null;
 +			boolean found = false;

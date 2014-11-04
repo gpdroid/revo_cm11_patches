@@ -109,11 +109,11 @@ index 5386cdd..93f3cf3 100755
  }
  /********************
 diff --git a/media/libmediaplayerservice/Android.mk b/media/libmediaplayerservice/Android.mk
-index 1c8c32d..5b76807 100644
+index 5e02313..cb3a7a1 100644
 --- a/media/libmediaplayerservice/Android.mk
 +++ b/media/libmediaplayerservice/Android.mk
-@@ -63,8 +63,6 @@ ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
-     endif
+@@ -58,8 +58,6 @@ ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
+         $(call project-path-for,qcom-media)/mm-core/inc
  endif
  
 -LOCAL_MODULE:= libmediaplayerservice
@@ -121,7 +121,7 @@ index 1c8c32d..5b76807 100644
  ifeq ($(TARGET_ENABLE_QC_AV_ENHANCEMENTS),true)
      LOCAL_CFLAGS += -DENABLE_AV_ENHANCEMENTS
      LOCAL_C_INCLUDES += $(TOP)/frameworks/av/include/media
-@@ -81,6 +79,13 @@ ifeq ($(TARGET_BOARD_PLATFORM),msm7x27a)
+@@ -71,6 +69,13 @@ ifeq ($(TARGET_BOARD_PLATFORM),msm7x27a)
      LOCAL_CFLAGS += -DUSE_SUBMIT_ONE_INPUT_BUFFER
  endif
  
@@ -155,10 +155,10 @@ index d3dbcbe..c1c201b 100644
              *supportsCameraSourceMetaDataMode ? "supports" : "DOES NOT SUPPORT");
  
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index a3d54a4..e3904fd 100755
+index 3ff1a63..e124bdb 100755
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -3989,10 +3989,11 @@ bool ACodec::LoadedState::onConfigureComponent(
+@@ -4006,10 +4006,11 @@ bool ACodec::LoadedState::onConfigureComponent(
                  static_cast<NativeWindowWrapper *>(obj.get()));
          CHECK(nativeWindow != NULL);
          mCodec->mNativeWindow = nativeWindow->getNativeWindow();
@@ -175,7 +175,7 @@ index a3d54a4..e3904fd 100755
      CHECK_EQ((status_t)OK, mCodec->initNativeWindow());
  
 diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
-index 7ee91ec..9de6b1a 100644
+index 5e0ed1d..c91e43a 100644
 --- a/media/libstagefright/Android.mk
 +++ b/media/libstagefright/Android.mk
 @@ -79,6 +79,7 @@ LOCAL_SRC_FILES:=                         \
@@ -186,7 +186,7 @@ index 7ee91ec..9de6b1a 100644
  
  LOCAL_C_INCLUDES:= \
          $(TOP)/frameworks/av/include/media/stagefright/timedtext \
-@@ -193,6 +194,35 @@ LOCAL_SRC_FILES += \
+@@ -192,6 +193,35 @@ LOCAL_SRC_FILES += \
          chromium_http_stub.cpp
  LOCAL_CPPFLAGS += -DCHROMIUM_AVAILABLE=1
  
@@ -237,10 +237,10 @@ index 14b04f9..8b6528d 100755
      }
  
 diff --git a/media/libstagefright/MPEG4Extractor.cpp b/media/libstagefright/MPEG4Extractor.cpp
-index 85ee7e3..14e2649 100644
+index d1b4381..22e9d3f 100644
 --- a/media/libstagefright/MPEG4Extractor.cpp
 +++ b/media/libstagefright/MPEG4Extractor.cpp
-@@ -2418,6 +2418,14 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
+@@ -2420,6 +2420,14 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
          objectType = 32 + br.getBits(6);
      }
  
@@ -255,7 +255,7 @@ index 85ee7e3..14e2649 100644
  #ifdef QCOM_DIRECTTRACK
      if(objectType == 1) { //AAC Main profile
          ALOGD("\n >>> Found AAC mainprofile in MPEG4 Extractor... \n");
-@@ -2442,11 +2450,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
+@@ -2444,11 +2452,15 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
          sampleRate = br.getBits(24);
          numChannels = br.getBits(4);
      } else {
@@ -273,7 +273,7 @@ index 85ee7e3..14e2649 100644
  
          sampleRate = kSamplingRate[freqIndex];
      }
-@@ -3701,6 +3713,7 @@ status_t MPEG4Source::fragmentedRead(
+@@ -3703,6 +3715,7 @@ status_t MPEG4Source::fragmentedRead(
              mBuffer->set_range(0, dstOffset);
          }
  
@@ -281,7 +281,7 @@ index 85ee7e3..14e2649 100644
          mBuffer->meta_data()->setInt64(
                  kKeyTime, ((int64_t)cts * 1000000) / mTimescale);
  
-@@ -3753,7 +3766,8 @@ static bool LegacySniffMPEG4(
+@@ -3755,7 +3768,8 @@ static bool LegacySniffMPEG4(
          || !memcmp(header, "ftyp3ge6", 8) || !memcmp(header, "ftyp3gg6", 8)
          || !memcmp(header, "ftypisom", 8) || !memcmp(header, "ftypM4V ", 8)
          || !memcmp(header, "ftypM4A ", 8) || !memcmp(header, "ftypf4v ", 8)
@@ -321,10 +321,10 @@ index 569e8a7..50ed117 100644
  
      if (offset >= mCacheOffset
 diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
-index a75c8f9..2c17cb4 100644
+index 269028a..c04f6e7 100644
 --- a/media/libstagefright/OMXCodec.cpp
 +++ b/media/libstagefright/OMXCodec.cpp
-@@ -57,6 +57,11 @@
+@@ -59,6 +59,11 @@
  
  #include "include/avc_utils.h"
  
@@ -336,7 +336,7 @@ index a75c8f9..2c17cb4 100644
  #ifdef ENABLE_AV_ENHANCEMENTS
  #include <QCMediaDefs.h>
  #include <QCMetaData.h>
-@@ -116,6 +121,17 @@ static sp<MediaSource> Make##name(const sp<MediaSource> &source, const sp<MetaDa
+@@ -122,6 +127,17 @@ static sp<MediaSource> Make##name(const sp<MediaSource> &source, const sp<MetaDa
      return new name(source, meta); \
  }
  
@@ -353,8 +353,8 @@ index a75c8f9..2c17cb4 100644
 +
  #define FACTORY_REF(name) { #name, Make##name },
  
- #ifdef QCOM_DIRECTTRACK
-@@ -130,8 +146,19 @@ static sp<MediaSource> InstantiateSoftwareEncoder(
+ #ifdef QTI_FLAC_DECODER
+@@ -141,8 +157,19 @@ static sp<MediaSource> InstantiateSoftwareEncoder(
          const char *name;
          sp<MediaSource> (*CreateFunc)(const sp<MediaSource> &, const sp<MetaData> &);
      };
@@ -374,7 +374,7 @@ index a75c8f9..2c17cb4 100644
          FACTORY_REF(AACEncoder)
      };
      for (size_t i = 0;
-@@ -144,6 +171,35 @@ static sp<MediaSource> InstantiateSoftwareEncoder(
+@@ -155,6 +182,35 @@ static sp<MediaSource> InstantiateSoftwareEncoder(
      return NULL;
  }
  
@@ -407,10 +407,10 @@ index a75c8f9..2c17cb4 100644
 +}
 +#endif // #ifdef USE_INTEL_MDP
 +
- #ifdef QCOM_DIRECTTRACK
+ #if defined(QCOM_DIRECTTRACK) || defined (QTI_FLAC_DECODER)
  static sp<MediaSource> InstantiateSoftwareDecoder(
          const char *name, const sp<MediaSource> &source) {
-@@ -374,7 +430,7 @@ uint32_t OMXCodec::getComponentQuirks(
+@@ -391,7 +447,7 @@ uint32_t OMXCodec::getComponentQuirks(
          quirks |= kOutputBuffersAreUnreadable;
      }
      if (list->codecHasQuirk(
@@ -419,21 +419,18 @@ index a75c8f9..2c17cb4 100644
          quirks |= kRequiresLoadedToIdleAfterAllocation;
      }
      if (list->codecHasQuirk(
-@@ -501,15 +557,29 @@ sp<MediaSource> OMXCodec::Create(
+@@ -524,7 +580,7 @@ sp<MediaSource> OMXCodec::Create(
              componentName = tmp.c_str();
          }
  
+-        sp<MediaSource> softwareCodec;
 +#ifndef USE_INTEL_MDP
          if (createEncoder) {
-             sp<MediaSource> softwareCodec =
-                 InstantiateSoftwareEncoder(componentName, source, meta);
-+
-             if (softwareCodec != NULL) {
-+
-                 ALOGV("Successfully allocated software codec '%s'", componentName);
+             softwareCodec = InstantiateSoftwareEncoder(componentName, source, meta);
+         }
+@@ -539,6 +595,17 @@ sp<MediaSource> OMXCodec::Create(
  
-                 return softwareCodec;
-             }
+             return softwareCodec;
          }
 +#else
 +        sp<MediaSource> softwareCodec = (createEncoder)?
@@ -449,7 +446,7 @@ index a75c8f9..2c17cb4 100644
  
  #ifdef QCOM_HARDWARE
          const char* ext_componentName = ExtendedCodec::overrideComponentName(quirks, meta);
-@@ -548,6 +618,9 @@ sp<MediaSource> OMXCodec::Create(
+@@ -577,6 +644,9 @@ sp<MediaSource> OMXCodec::Create(
  
              err = codec->configureCodec(meta);
              if (err == OK) {
@@ -459,7 +456,7 @@ index a75c8f9..2c17cb4 100644
                  return codec;
              }
  
-@@ -1163,7 +1236,7 @@ status_t OMXCodec::isColorFormatSupported(
+@@ -1205,7 +1275,7 @@ status_t OMXCodec::isColorFormatSupported(
          // the incremented index (bug 2897413).
          CHECK_EQ(index, portFormat.nIndex);
          if (portFormat.eColorFormat == colorFormat) {
@@ -468,7 +465,7 @@ index a75c8f9..2c17cb4 100644
              return OK;  // colorFormat is supported!
          }
          ++index;
-@@ -1432,7 +1505,7 @@ status_t OMXCodec::getVideoProfileLevel(
+@@ -1474,7 +1544,7 @@ status_t OMXCodec::getVideoProfileLevel(
  
      CODEC_LOGE("Target profile (%d) and level (%d) is not supported",
              profile, level);
@@ -477,7 +474,7 @@ index a75c8f9..2c17cb4 100644
  }
  
  status_t OMXCodec::setupH263EncoderParameters(const sp<MetaData>& meta) {
-@@ -2443,15 +2516,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
+@@ -2508,15 +2578,9 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
          cancelEnd = def.nBufferCountActual;
      }
  
@@ -496,7 +493,7 @@ index a75c8f9..2c17cb4 100644
      }
  
      return err;
-@@ -3004,6 +3071,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3069,6 +3133,16 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
          {
              CODEC_LOGE("ERROR(0x%08lx, %ld)", data1, data2);
  
@@ -513,7 +510,7 @@ index a75c8f9..2c17cb4 100644
              setState(ERROR);
              break;
          }
-@@ -3018,6 +3095,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
+@@ -3083,6 +3157,7 @@ void OMXCodec::onEvent(OMX_EVENTTYPE event, OMX_U32 data1, OMX_U32 data2) {
                  // when the OMX_EventPortSettingsChanged is not meant for reallocating
                  // the output buffers.
                  if (data1 == kPortIndexOutput) {
@@ -521,7 +518,7 @@ index a75c8f9..2c17cb4 100644
                      CHECK(mFilledBuffers.empty());
                  }
                  onPortSettingsChanged(data1);
-@@ -3377,7 +3455,7 @@ status_t OMXCodec::freeBuffersOnPort(
+@@ -3442,7 +3517,7 @@ status_t OMXCodec::freeBuffersOnPort(
      for (size_t i = buffers->size(); i-- > 0;) {
          BufferInfo *info = &buffers->editItemAt(i);
  
@@ -530,7 +527,7 @@ index a75c8f9..2c17cb4 100644
              continue;
          }
  
-@@ -3628,7 +3706,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
+@@ -3693,7 +3768,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
  
          size_t size = specific->mSize;
  
@@ -540,7 +537,7 @@ index a75c8f9..2c17cb4 100644
                  && !(mQuirks & kWantsNALFragments)) {
              static const uint8_t kNALStartCode[4] =
                      { 0x00, 0x00, 0x00, 0x01 };
-@@ -5268,6 +5347,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
+@@ -5363,6 +5439,12 @@ void OMXCodec::signalBufferReturned(MediaBuffer *buffer) {
          BufferInfo *info = &buffers->editItemAt(i);
  
          if (info->mMediaBuffer == buffer) {
@@ -917,10 +914,10 @@ index b093946..9d95eb4 100644
              res = mStreamingProcessor->updateRecordingRequest(params);
              if (res != OK) {
 diff --git a/services/camera/libcameraservice/api1/CameraClient.cpp b/services/camera/libcameraservice/api1/CameraClient.cpp
-index 67d4059..22df6d7 100644
+index 1629e05..0204fbd 100644
 --- a/services/camera/libcameraservice/api1/CameraClient.cpp
 +++ b/services/camera/libcameraservice/api1/CameraClient.cpp
-@@ -373,6 +373,7 @@ status_t CameraClient::startPreview() {
+@@ -368,6 +368,7 @@ status_t CameraClient::startPreview() {
  status_t CameraClient::startRecording() {
      Mutex::Autolock lock(mLock);
      LOG1("startRecording (pid %d)", getCallingPid());
@@ -943,7 +940,7 @@ index 6076dae..8f20bfe 100644
      // Make sure this is for the current heap
      ssize_t offset;
 diff --git a/services/camera/libcameraservice/device1/CameraHardwareInterface.h b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
-index 6d05127..779ff2c 100644
+index 7e71c87..ac80c23 100644
 --- a/services/camera/libcameraservice/device1/CameraHardwareInterface.h
 +++ b/services/camera/libcameraservice/device1/CameraHardwareInterface.h
 @@ -111,6 +111,11 @@ public:

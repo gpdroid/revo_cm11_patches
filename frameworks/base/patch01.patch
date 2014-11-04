@@ -70,10 +70,10 @@ index 28752a5..f6632fa 100644
      mArgC = argc;
      mArgV = argv;
 diff --git a/core/java/android/content/pm/PackageManager.java b/core/java/android/content/pm/PackageManager.java
-index 4f6104c..05e0df6 100644
+index d21692e..13114e6 100644
 --- a/core/java/android/content/pm/PackageManager.java
 +++ b/core/java/android/content/pm/PackageManager.java
-@@ -363,6 +363,23 @@ public abstract class PackageManager {
+@@ -370,6 +370,23 @@ public abstract class PackageManager {
      public static final int INSTALL_SUCCEEDED = 1;
  
      /**
@@ -484,10 +484,10 @@ index 44452f0..9b271a4 100644
  {
      return AndroidRuntime::registerNativeMethods(env,
 diff --git a/services/java/com/android/server/VibratorService.java b/services/java/com/android/server/VibratorService.java
-index 2cbf177..5ff8f85 100644
+index e8f399e..aad2e2f 100644
 --- a/services/java/com/android/server/VibratorService.java
 +++ b/services/java/com/android/server/VibratorService.java
-@@ -78,6 +78,12 @@ public class VibratorService extends IVibratorService.Stub
+@@ -83,6 +83,12 @@ public class VibratorService extends IVibratorService.Stub
      native static boolean vibratorExists();
      native static void vibratorOn(long milliseconds);
      native static void vibratorOff();
@@ -500,7 +500,7 @@ index 2cbf177..5ff8f85 100644
  
      private class Vibration implements IBinder.DeathRecipient {
          private final IBinder mToken;
-@@ -359,8 +365,9 @@ public class VibratorService extends IVibratorService.Stub
+@@ -378,8 +384,9 @@ public class VibratorService extends IVibratorService.Stub
          } catch (RemoteException e) {
          }
          if (vib.mTimeout != 0) {
@@ -616,10 +616,10 @@ index e69de29..e540b16 100644
 +    boolean doCheck(String... params);
 +}
 diff --git a/services/java/com/android/server/pm/PackageManagerService.java b/services/java/com/android/server/pm/PackageManagerService.java
-index af5ed1b..1246c09 100644
+index f444fb7..3971c7b 100644
 --- a/services/java/com/android/server/pm/PackageManagerService.java
 +++ b/services/java/com/android/server/pm/PackageManagerService.java
-@@ -217,6 +217,7 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -218,6 +218,7 @@ public class PackageManagerService extends IPackageManager.Stub {
      private static final boolean DEBUG_PACKAGE_SCANNING = false;
      private static final boolean DEBUG_APP_DIR_OBSERVER = false;
      private static final boolean DEBUG_VERIFY = false;
@@ -627,7 +627,7 @@ index af5ed1b..1246c09 100644
  
      private static final int RADIO_UID = Process.PHONE_UID;
      private static final int LOG_UID = Process.LOG_UID;
-@@ -586,6 +587,11 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -596,6 +597,11 @@ public class PackageManagerService extends IPackageManager.Stub {
      // or internal storage.
      private IMediaContainerService mContainerService = null;
  
@@ -639,7 +639,7 @@ index af5ed1b..1246c09 100644
      static final int SEND_PENDING_BROADCAST = 1;
      static final int MCS_BOUND = 3;
      static final int END_COPY = 4;
-@@ -4264,6 +4270,53 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4325,6 +4331,53 @@ public class PackageManagerService extends IPackageManager.Stub {
          return new File(mUserAppDataDir.getAbsolutePath() + File.separator + userId);
      }
  
@@ -693,7 +693,7 @@ index af5ed1b..1246c09 100644
      private File getDataPathForPackage(String packageName, int userId) {
          /*
           * Until we fully support multiple users, return the directory we
-@@ -4606,6 +4659,25 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4678,6 +4731,25 @@ public class PackageManagerService extends IPackageManager.Stub {
                  Slog.w(TAG, "Package " + pkg.packageName
                          + " was transferred to another, but its .apk remains");
              }
@@ -719,7 +719,7 @@ index af5ed1b..1246c09 100644
              
              // Just create the setting, don't add it yet. For already existing packages
              // the PkgSetting exists already and doesn't have to be created.
-@@ -4920,10 +4992,21 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -4992,10 +5064,21 @@ public class PackageManagerService extends IPackageManager.Stub {
                          }
  
                          try {
@@ -745,7 +745,7 @@ index af5ed1b..1246c09 100644
                              }
                          } catch (IOException e) {
                              Slog.e(TAG, "Unable to copy native libraries", e);
-@@ -4932,6 +5015,35 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -5004,6 +5087,35 @@ public class PackageManagerService extends IPackageManager.Stub {
                          }
                      }
  
@@ -781,7 +781,7 @@ index af5ed1b..1246c09 100644
                      if (DEBUG_INSTALL) Slog.i(TAG, "Linking native library dir for " + path);
                      final int[] userIds = sUserManager.getUserIds();
                      synchronized (mInstallLock) {
-@@ -6006,6 +6118,18 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6115,6 +6227,18 @@ public class PackageManagerService extends IPackageManager.Stub {
              final PackageParser.Package pkg = ps.pkg;
              if (pkg != null) {
                  cleanPackageDataStructuresLILPw(pkg, chatty);
@@ -800,7 +800,7 @@ index af5ed1b..1246c09 100644
              }
          }
      }
-@@ -6023,6 +6147,17 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -6132,6 +6256,17 @@ public class PackageManagerService extends IPackageManager.Stub {
                  mAppDirs.remove(pkg.mPath);
              }
              cleanPackageDataStructuresLILPw(pkg, chatty);
@@ -818,7 +818,7 @@ index af5ed1b..1246c09 100644
          }
      }
  
-@@ -8900,8 +9035,15 @@ public class PackageManagerService extends IPackageManager.Stub {
+@@ -9009,8 +9144,15 @@ public class PackageManagerService extends IPackageManager.Stub {
              }
              try {
                  int copyRet = copyNativeLibrariesForInternalApp(codeFile, nativeLibraryFile);
